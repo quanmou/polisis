@@ -1,0 +1,160 @@
+OPP-115 Corpus Manual
+=====================
+v1.0 Release
+
+
+Usage Information
+=================
+
+(C) Copyright 2016, all rights reserved. This dataset was developed by Carnegie Mellon University under the Usable Privacy Policy Project (www.usableprivacy.org). For any questions about this data, including licensing, please contact Prof. Norman Sadeh (sadeh@cs.cmu.edu).
+
+The annotations are made available for research, teaching, and scholarship purposes only, with further parameters in the spirit of a Creative Commons Attribution-NonCommercial License.
+
+If you use this dataset as part of a publication, you must cite the following paper:
+
+The creation and analysis of a website privacy policy corpus. Shomir Wilson, Florian Schaub, Aswarth Abhilash Dara, Frederick Liu, Sushain Cherivirala, Pedro Giovanni Leon, Mads Schaarup Andersen, Sebastian Zimmeck, Kanthashree Mysore Sathyendra, N. Cameron Russell, Thomas B. Norton, Eduard Hovy, Joel Reidenberg, and Norman Sadeh. In Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics, Berlin, Germany, August 2016.
+
+The above paper is also an essential read for understanding the structure and contents of the corpus.
+
+Additionally, please email Norman Sadeh (sadeh@cs.cmu.edu) with copies of publications, technical reports, and other papers that use the OPP-115 corpus. We will feature your work on the Usable Privacy Policy Project website.
+
+Overview
+========
+
+This archive contains data processed and produced by the fine-grained annotation effort of the Usable Privacy Policy Project. Briefly, we had skilled annotators (i.e., graduate students in law) read a collection of website privacy policies and annotate the policies with information on the privacy practices that they describe. These skilled workers used a web-based annotation tool to do this.
+
+Contained in this archive are the following subdirectories:
+-*annotations/* contains CSV files that show the output of the skilled workers.
+-*consolidation/* contains three subdirectories of CSV files with inter-annotator redundancies removed.
+-*documentation/* contains information about the archive contents.
+-*documentation/errant_span_indexes/* contains files listing IDs of data practices with erroneous indexes for text spans.
+-*original_policies/* contains the privacy policies (mostly) in their raw, web-sourced form
+-*pretty_print/* contains human-readable (English sentences) interpretations of the fine-grained annotations.
+-*pretty_print_uniquified/* contains the human-readable results of grouping together identical privacy practices.
+-*sanitized_policies/* contains the privacy policy texts in a simplified, segmented format.
+
+Version History
+===============
+
+*2016-07-10*: This will be the first release (v1.0) of the OPP-115 Corpus. Changes from the internal development version of the corpus include redacting the sandbox/ directory, removing some outdated information from documentation/, and preparing this file (readme.txt) for a more general audience.
+
+Terminology
+===========
+
+In this dataset, a *privacy practice* (or *data practice* or simply *practice*) is a structured annotation derived from privacy policy text by interpreting it. All privacy practices in the OPP-115 Corpus were created by human annotators. A practice consists of the following:
+-a selection of one of ten *categories* (these are things like "first party collection/use", "data security", or "other")
+-a set of *attribute*-*value* selections (some attributes are optional, and each attribute is associated with a closed set of multiple potential values)
+-a set of *spans* of text selected from the policy, each associated with a value (spans are optional for some values)
+
+Privacy policies were divided into *segments* (very roughly paragraph-length snippets of text) for workers to read and annotate, one segment at a time. The annotation activity consisted of identifying zero or more data practices per segment. Three annotators worked on each policy's segments.
+
+In summary: a privacy policy is split into segments; each annotator identified zero or more data practices per segment; each data practice consists of a category selection and selections for values of attributes; and some values are associated with text spans in the privacy policy.
+
+Annotations
+===========
+
+Each CSV file in annotations/ contains the annotation data for one privacy policy. Each policy has been annotated by three workers, and data from all three workers is present in the same file. These files do not represent any efforts to consolidate information from multiple annotators.
+
+These CSV files use the Excel dialect. Each row contains the information for a single data practice. The columns are:
+1. (A) annotation ID (a globally unique identifier for a data practice)
+2. (B) batch ID (name of a batch in the annotation tool; often indicates who the annotators were)
+3. (C) annotator ID
+4. (D) policy ID (this corresponds to the numeric prefixes in the policy filename, as found in other directories)
+5. (E) segment ID (the zero-indexed, sequential identifier of the policy segment; e.g., the first segment in a policy's text is segment zero)
+6. (F) category name
+7. (G) attribute-value pairs (represented as JSON)
+8. (H) policy URL
+9. (I) date
+
+The attribute-value dictionary (column 7/G), at its highest level, consists of keys (strings that correspond to attribute names) that map to nested dictionaries. The nested dictionaries have keys that specify the selected text, its location in the segment, and the value associated with the attribute.
+
+Note that practices in some categories have optional attributes (i.e., the annotator was not required to select a value for these attributes). The string "not-selected" represents unselected values.
+
+
+Consolidation
+=============
+
+Since multiple annotators worked on each privacy policy, they produced some redundant annotations. Each of the three subdirectories in consolidation/ contains the results of the consolidation algorithm with a different convergence threshold, as described in the paper. The annotations are in CSV files in the same format as described in the _Annotations_ section of this document.
+
+In the consolidation CSV files, the data practices that were created by consolidation (i.e., by merging together 2-3 data practices, each from a different annotator) have a 'C' prefix at the beginning of their annotation IDs. All others are "singlet" data practices, identified by one annotator and too distinct for consolidation.
+
+Documentation
+=============
+
+The contents of documentation/ explain the rest of the archive contents.
+-categories-july30.xml is an XML representation of the annotation scheme for data practices.
+-errant_span_indexes/ is explained in a section below.
+-policies_at100.csv is a CSV file with data on all policies covered by the websites in websites_at100.csv and follows the same format as policies_opp115.csv.
+-policies_opp115.csv is a CSV file with data on the original 115 annotated policies. Each row contains the information for a single policy with columns (A) Policy UID, (B) Policy URL, (C) Policy collection date (date, YYYY-MM-DD, at which policy was retrieved for annotation), (D) Policy last updated date (date, YYYY-MM-DD, at which policy retrieved was last updated if provided).
+-policy-selection-approach.txt contains notes on how policies were selected for collection with respect to sectors.
+-readme.txt is this file.
+-websites_at100.csv is a CSV file with data on websites in the US Alexa Top 100 and follows the same format as websites_opp115.csv.
+-websites_covered_opp115.csv is a CSV file with data on websites with privacy policies covered by policies_opp115.csv and follows the same format as websites_opp115.csv. A superset of websites_opp115.csv.
+-websites_opp115.csv is a CSV file with data on the original 115 selected websites. Each row contains the information for a single website with columns (A) Site UID, (B) Site URL, (C) Site Human-Readable Name, (D) Policy UID (cooresponds to an policy in the policies_opp115.csv file), (E) Site check date (date, YYYY-MM-DD, at which policy was checked for accuracy), (F) In 115 Set?, (G) Comments, (H...) Sectoral Data (an indefinite number of columns containing DMOZ sectors for this site).
+
+Errant Span Indexes
+===================
+
+A bug in the annotation tool caused a small number of data practices to contain erroneous character indexes for the text spans of one or more of their attributes. These are identified in CSV files in the documentation/errant_span_indexes/ directory. The columns of these files are:
+
+1. (A) annotation ID
+2. (B) attribute name (with a numeric prefix identifying the attribute and an underscore)
+
+
+Original Policies
+=================
+
+The original_policies/ directory contains the privacy policy web pages (mostly), as downloaded from the internet. All but one of these pages is HTML; the exception is one page saved in PDF format. Many pages have directories paired with them to contain files necessary for rendering in a web browser.
+
+
+Pretty Print
+============
+
+The pretty_print/ directory contains interpretations of the fine-grained annotations as English sentences ("pretty print"). Each file in this directory corresponds to a file in annotations/, and each row in a file corresponds to a single privacy practice.
+
+The CSV files in this directory contain the following columns:
+1. (A) annotation ID
+2. (B) policy segment ID
+3. (C) annotator ID
+4. (D) pretty print string
+
+The IDs in Column (A) should be sufficient to connect each row in a pretty print CSV file with a row in the corresponding annotation CSV file.
+
+Pretty Print Uniquified
+=======================
+
+The pretty_print_uniquified/ directory contains a derivative of the data in the pretty_print/ directory. Within each CSV file (policy), practices are consolidated into sets on the basis of equivalent pretty print representations. Each line represents one such set.
+
+The CSV files in this directory contain the following columns:
+1. (A) Pretty print for the privacy practices in the set
+2. (B) Number of practices in the set
+3. (C) A (Python-formatted) list of tuples, with each tuple representing a unique policy practice. Each tuple contains these members in order:
+        (a) annotation ID
+        (b) policy segment ID
+        (c) annotator ID
+
+Sanitized Policies
+==================
+
+The sanitized_policies/ directory contains the simplified representations of the privacy policies that annotators viewed. All that remains is policy text with minimal markup for items like section titles and lists. The HTML in these files is divided into the segments that were given to the skilled workers to read, one at a time. The string of three sequential pipe characters ("|||") serves as the separator between segments. No additional files are included in this directory.
+
+See the "Original Policies" section for a few more details on how these policies relate to the rest of the corpus.
+
+Errata
+======
+-Due to an error in the annotation tool, a small number of privacy practices are missing required text spans. Absences are marked by the "selectedText" key-value pair missing in the dictionary or both start and end indices being -1 or 0.
+-Due to an error in the annotation tool, a small number of HTML snippets in Column 9 of the annotations CSV files are missing the markup tags that indicate annotator-selected spans.
+
+Credits
+=======
+
+This documentation was written by Shomir Wilson.
+
+We thank our policy annotators, who worked with us from the University of Pittsburgh and Fordham University. Without them this dataset would not have been possible.
+
+This research was partially funded by the National Science Foundation under grant agreement CNS-1330596 and CNS-1330214.
+
+
+
+
+END
