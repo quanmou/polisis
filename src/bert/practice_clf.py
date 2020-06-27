@@ -7,59 +7,63 @@ import tensorflow as tf
 import pickle
 from datetime import datetime
 
-DIR = os.path.dirname(os.path.abspath(__file__))
+DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if DIR not in sys.path:
     sys.path.append(DIR)
 
-from . import modeling
-from . import optimization
-from . import tokenization
+import src.bert.modeling as modeling
+import src.bert.optimization as optimization
+import src.bert.tokenization as tokenization
 
 
 if True:
     flags = tf.flags
     FLAGS = flags.FLAGS
-    flags.DEFINE_string('gpu_list', '1', 'gpu list')
+    flags.DEFINE_string('gpu_list', '0', 'gpu list')
     if 'CUDA_VISIBLE_DEVICES' not in os.environ:
         os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu_list
     num_gpus = len(os.environ['CUDA_VISIBLE_DEVICES'].split(','))
 
     flags.DEFINE_string(
-        "input_dir", f'{DIR}/../../data',
+        "input_dir", f'{DIR}/data',
         "The input data dir. Should contain the .csv files (or other data files) for the task.")
 
     flags.DEFINE_string(
-        "training_data", f'{DIR}/../../data/training_data.csv',
+        "training_data", f'{DIR}/data/train_annotations.csv',
         "The tokenized training data. Usually formatted as InputFeatures")
 
     flags.DEFINE_string(
-        "bert_config_file", f"{DIR}/bert/model/pretrained_model/bert_config.json",
+        "test_data", f'{DIR}/data/test_annotations.csv',
+        "The tokenized training data. Usually formatted as InputFeatures")
+
+    flags.DEFINE_string(
+        "bert_config_file", f"{DIR}/model/pretrained_model/bert_config.json",
         "The config json file corresponding to the pre-trained BERT model. This specifies the model architecture.")
 
-    flags.DEFINE_string("vocab_file", f"{DIR}/bert/model/pretrained_model/vocab.txt",
+    flags.DEFINE_string("vocab_file", f"{DIR}/model/pretrained_model/vocab.txt",
                         "The vocabulary file that the BERT model was trained on.")
 
     flags.DEFINE_string(
-        "init_checkpoint", f"{DIR}/bert/model/pretrained_model/bert_model.ckpt",
+        "init_checkpoint", f"{DIR}/model/pretrained_model/bert_model.ckpt",
         "Initial checkpoint (usually from a pre-trained BERT model).")
 
     flags.DEFINE_string(
-        "output_dir", './model/bert',
+        "output_dir", f'{DIR}/model/practice_clf',
         "The output directory where the model checkpoints will be written.")
 
     flags.DEFINE_integer(
-        "max_seq_length", 256,
+        "max_seq_length", 512,
         "The maximum total input sequence length after WordPiece tokenization. "
         "Sequences longer than this will be truncated, and sequences shorter than this will be padded.")
 
     flags.DEFINE_bool("do_train", False, "Whether to run training.")
     flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
     flags.DEFINE_bool("do_predict", True, "Whether to run the model in inference mode on the test set.")
-    flags.DEFINE_integer("train_batch_size", 8, "Total batch size for training.")
+    flags.DEFINE_integer("train_batch_size", 4, "Total batch size for training.")
     flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
     flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
     flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
-    flags.DEFINE_integer("num_train_epochs", 1, "Total number of training epochs to perform.")
+    flags.DEFINE_integer("num_train_epochs", 2, "Total number of training epochs to perform.")
     flags.DEFINE_float("warmup_proportion", 0.1,
                        "Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training.")
     flags.DEFINE_integer("save_checkpoints_steps", 10, "How often to save the model checkpoint.")
@@ -104,20 +108,20 @@ class DataProcessor:
     def get_train_examples(self, training_data):
         """See base class."""
         jd_df = self._read_csv(training_data)
-        jd_data = jd_df[['segment', 'category']].values.tolist()
+        jd_data = jd_df[['segment_content', 'category_id']].values.tolist()
         return self.create_examples(jd_data, 'training')
 
     def get_test_examples(self, test_data):
         """See base class."""
         jd_df = self._read_csv(test_data)
-        jd_data = jd_df[['segment', 'category']].values.tolist()
+        jd_data = jd_df[['segment_content', 'category_id']].values.tolist()
         return self.create_examples(jd_data, 'testing')
 
     def get_labels(self):
         """See base class."""
-        return {0: "First Party Collection/Use", 1: "Third Party Sharing/Collection", 2: "User Choice/Control",
-                3: "User Access, Edit, & Deletion", 4: "Data Retention", 5: "Data Security", 6: "Policy Change",
-                7: "Do Not Track", 8: "International & Specific Audiences", 9: "Other"}
+        return ["First Party Collection/Use", "Third Party Sharing/Collection", "User Choice/Control",
+                "User Access, Edit and Deletion", "Data Retention", "Data Security", "Policy Change",
+                "Do Not Track", "International and Specific Audiences", "Other"]
 
     @classmethod
     def create_examples(cls, lines, set_type):
@@ -127,7 +131,7 @@ class DataProcessor:
             guid = "%s-%s" % (set_type, tokenization.convert_to_unicode(str(i+1)))
             text_a = tokenization.convert_to_unicode(str(line[0]))
             text_b = tokenization.convert_to_unicode('')
-            label = tokenization.convert_to_unicode(str(line[2]))
+            label = tokenization.convert_to_unicode(str(line[1]))
             examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
@@ -154,12 +158,8 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
       tokens_b.pop()
 
 
-def convert_single_example(ex_index, example, label_list, max_seq_length, tokenizer):
+def convert_single_example(ex_index, example, max_seq_length, tokenizer):
   """Converts a single `InputExample` into a single `InputFeatures`."""
-  label_map = {}
-  for (i, label) in enumerate(label_list):
-    label_map[label] = i
-
   tokens_a = tokenizer.tokenize(example.text_a)
   tokens_b = None
   if example.text_b:
@@ -226,7 +226,6 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
   assert len(input_mask) == max_seq_length
   assert len(segment_ids) == max_seq_length
 
-  label_id = label_map[example.label]
   if ex_index < 5:
     tf.logging.info("*** Example ***")
     tf.logging.info("guid: %s" % (example.guid))
@@ -235,34 +234,34 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     tf.logging.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
     tf.logging.info("input_mask: %s" % " ".join([str(x) for x in input_mask]))
     tf.logging.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
-    tf.logging.info("label: %s (id = %d)" % (example.label, label_id))
+    tf.logging.info("label: %s" % example.label)
 
   feature = InputFeatures(
       input_ids=input_ids,
       input_mask=input_mask,
       segment_ids=segment_ids,
-      label_id=label_id)
+      label_id=example.label)
   return feature
 
 
-def convert_examples_to_features(examples, label_list, tokenizer):
+def convert_examples_to_features(examples, tokenizer):
     """Convert a set of `InputExample`s to a list of `InputFeatures`."""
     features = []
     for (ex_index, example) in enumerate(examples):
         if ex_index % 100 == 0:
             print("Writing example %d of %d" % (ex_index, len(examples)))
-        feature = convert_single_example(ex_index, example, label_list, FLAGS.max_seq_length, tokenizer)
+        feature = convert_single_example(ex_index, example, FLAGS.max_seq_length, tokenizer)
         features.append(feature)
     return features
 
 
-def get_input_features(examples, label_list, tokenizer, reload, set_type):
+def get_input_features(examples, tokenizer, reload, set_type):
     if reload:
         with open(os.path.join(FLAGS.input_dir, '%s_features.pkl' % set_type), 'rb') as f:
             features = pickle.load(f)
             print('Reloaded %d tokenized example' % len(features))
     else:
-        features = convert_examples_to_features(examples, label_list, tokenizer)
+        features = convert_examples_to_features(examples, tokenizer)
         with open(os.path.join(FLAGS.input_dir, '%s_features.pkl' % set_type), 'wb') as f:
             pickle.dump(features, f)
 
@@ -325,7 +324,7 @@ class BertClassifier:
         self.bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
         self.tokenizer = tokenization.FullTokenizer(vocab_file=FLAGS.vocab_file)
         self.data_processor = DataProcessor()
-        self.labels, self.label2ind, self.ind2label = self.data_processor.get_labels()
+        self.labels = self.data_processor.get_labels()
         self.num_labels = len(self.labels)
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -381,9 +380,9 @@ class BertClassifier:
             loss = tf.reduce_mean(per_example_loss)
         return loss, per_example_loss, logits, probabilities
 
-    def train(self, data_file=None, reload=False, save_path=FLAGS.output_dir):
+    def train(self, data_file=FLAGS.training_data, reload=False, save_path=FLAGS.output_dir):
         examples = self.data_processor.get_train_examples(os.path.join(FLAGS.input_dir, data_file))
-        input_features = get_input_features(examples, self.labels, self.tokenizer, reload, set_type='train')
+        input_features = get_input_features(examples, self.tokenizer, reload, set_type='train')
         random.shuffle(input_features)
         num_train_steps = int(len(input_features) / FLAGS.train_batch_size * FLAGS.num_train_epochs)
         num_warmup_steps = int(num_train_steps * FLAGS.warmup_proportion)
@@ -409,12 +408,12 @@ class BertClassifier:
                         saver.save(self.sess, os.path.join(save_path, 'model.ckpt.' + str(epoch) + '.' + str(batch)))
                     batch += 1
 
-    def evaluate(self, data_file=None, reload=False, topK=5):
+    def evaluate(self, data_file=FLAGS.test_data, reload=False, topK=5):
         examples = self.data_processor.get_test_examples(os.path.join(FLAGS.input_dir, data_file))
-        input_features = get_input_features(examples, self.labels, self.tokenizer, reload, set_type='test')
+        input_features = get_input_features(examples, self.tokenizer, reload, set_type='test')
         with self.graph.as_default():
             self.sess.run(tf.initialize_all_variables())
-        count, topK_correct_count = 0, [0, 0, 0, 0, 0]
+        count, topK_correct_count = 0, [0] * topK
         for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.eval_batch_size):
             eval_dict = {self.ids_placeholder: ids,
                          self.mask_placeholder: mask,
@@ -423,11 +422,11 @@ class BertClassifier:
             topK_index = probs.argpartition(-topK)[:, -topK:]
             column_index = np.arange(probs.shape[0])[:, None]
             argsort_index = np.argsort(probs[column_index, topK_index[:, :topK]])
-            sorted_topK_index = topK_index[:, :topK][column_index, argsort_index]
+            sorted_topK_index = topK_index[:, :topK][column_index, argsort_index][::-1]
             for i in range(len(labels)):
-                topK_index = sorted_topK_index[i][::-1]
+                topK_index = sorted_topK_index[i]
                 for k in range(topK):
-                    topK_correct_count[k] += int(labels[i] in topK_index[:k+1])
+                    topK_correct_count[k] += int(int(labels[i]) in topK_index[:k+1])
             count += 1
             if count % 20 == 0:
                 print('evaluate finished %s' % np.round(count * FLAGS.eval_batch_size / len(examples), 3))
@@ -437,9 +436,9 @@ class BertClassifier:
         for k in range(topK):
             print('top %s accuracy: %s' % (k+1, np.round(topK_correct_count[k] / len(examples), 6)))
 
-    def predict(self, job_title='', job_description='', topK=5):
-        example = self.data_processor.create_examples([[job_title, job_description, self.labels[0]]], set_type='predict')
-        feature = convert_single_example(0, example[0], self.labels, FLAGS.max_seq_length, self.tokenizer)
+    def predict(self, segment='', topK=5):
+        example = self.data_processor.create_examples([[segment, self.labels[0]]], set_type='predict')
+        feature = convert_single_example(0, example[0], FLAGS.max_seq_length, self.tokenizer)
         predict_dict = {self.ids_placeholder: [feature.input_ids],
                         self.mask_placeholder: [feature.input_mask],
                         self.segment_placeholder: [feature.segment_ids]}
@@ -455,12 +454,11 @@ class BertClassifier:
 
 
 def main(_):
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H')
-    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-06-24_02'))
-    clf = BertClassifier(init_checkpoint=checkpoint, is_training=True)
-    clf.train(reload=True,
-              data_file='train_data.csv',
-              save_path=os.path.join(FLAGS.output_dir, timestamp))
+    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-06-27_21'))
+    # clf = BertClassifier(is_training=True, init_checkpoint=checkpoint)
+    # clf.train(reload=True, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
+    clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
+    clf.evaluate(topK=3)
 
 
 if __name__ == '__main__':
