@@ -1,0 +1,39 @@
+html, body {
+    height: 100%;
+}
+
+.form {
+    overflow: auto;
+    width: 930px;
+    margin: 5px 0;
+}
+
+.label {
+    float: left;
+    display: block;
+    margin-right: 5px;
+}
+
+.text {
+    width: 800px;
+    display: block;
+    float: right;
+}
+
+.output {
+    width: 720px;
+    display: block;
+    float: left;
+    margin-left: 50px;
+}
+#btn {
+    width: 70px;
+}
+
+#waiting {
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}

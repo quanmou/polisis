@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}JD分类{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+    function showWaiting() {
+        $("#btn").enable = false;
+        document.body.style.cursor = "wait";  // 沙漏 (等待)
+    }
+
+    function closeWaiting() {
+        $("#btn").enable = true;
+        document.body.style.cursor = "default";  // 箭头 (默认)
+    }
+
+    function classify() {
+        if(document.body.style.cursor !== "wait") {
+            let d = {};
+            let segment = $("#segment").val();
+
+            d['segment'] = segment;
+            $("#segment_content").html(segment);
+            showWaiting();
+            let senddata = JSON.stringify(d);
+            $.ajax({
+                url: "jd",
+                type: "POST",
+                data: senddata,
+                dataType: "json",
+                complete: function (jqXHR) {
+                    if (jqXHR.status === 200) {
+                        let data = jqXHR.responseJSON;
+                        let output = ''
+                        for (let kvlist of data['bert_topK_labels'].entries()) {
+                            let curVal = kvlist[1];
+                            let s = curVal[0].toString() + ': ' + curVal[1].toString();
+                            output = output + s + '<br>';
+                        }
+                        $("#practice").html(output);
+                    }
+                    else {
+                        alert("你输入的句子好像有问题😅换个句子试试🤔");
+                    }
+                    closeWaiting();
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
+
+
+{% block content %}
+<div class="title">
+    <div class="container">
+        <h1>欢迎使用policy解析系统！</h1>
+    </div>
+</div>
+<div class="form">
+    <label class="label">请输入segment:</label>
+    <input type="text" id="segment" class="text">
+</div>
+<button type="button" id="btn" class="label" onclick="classify();">预测分类</button><br>
+<div class="form">
+    <label class="label">segment内容:</label>
+    <div id="segment_content" class="text" aria-readonly="true"></div>
+</div>
+<div class="form">
+    <label class="label">预测结果:</label>
+    <div id="practice" class="output" aria-readonly="true"></div>
+</div>
+<div id="waiting">
+    <img src="../static/waiting.gif" />
+</div>
+{% endblock %}

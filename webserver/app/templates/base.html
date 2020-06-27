@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    {%- block html %}
+    <head>
+        {%- block head %}
+        <title>{% block title %}{% endblock title %}</title>
+
+        {%- block metas %}
+        <meta charset="UTF-8">
+        {%- endblock metas %}
+
+        {%- block styles %}
+        <link rel="stylesheet" href="../static/style.css">
+        {%- endblock styles %}
+
+        <!--<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>-->
+        <script type="text/javascript" src="../static/jquery-2.1.1.min.js"></script>
+
+        {%- endblock head %}
+    </head>
+    <body>
+        {% block body -%}
+
+            {% block content -%}
+            {%- endblock content %}
+
+            {% block scripts %}
+            {%- endblock scripts %}
+
+        {%- endblock body %}
+    </body>
+    {%- endblock html %}
+</html>
