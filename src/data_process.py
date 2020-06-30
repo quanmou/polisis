@@ -41,6 +41,7 @@ def get_segments(file_path=sanitized_polices_path):
 
 def process_segment_train_data(file_path=threshold_05):
     all_segments = get_segments()
+    all_segment_df = pd.DataFrame()
     all_annotation_df = pd.DataFrame()
     for path, subdirs, files in os.walk(file_path):
         for filename in files:
@@ -53,14 +54,32 @@ def process_segment_train_data(file_path=threshold_05):
                                                    'policy_URL'])
                 annotation_df.insert(5, 'segment_content',
                                      [policy_segment['polices'][i] for i in annotation_df['segment_ID']])
-                annotation_df.insert(6, 'category_id', [practice2id[i] for i in annotation_df['category_name']])
+                annotation_df.insert(6, 'category_ID', [practice2id[i] for i in annotation_df['category_name']])
+                segment_categories = {a: set(x) for a, x in annotation_df.groupby('segment_ID')['category_ID']}
+                segment_categories = {segment: ','.join([str(int(i in category)) for i in range(len(id2pratice))])
+                                      for segment, category in segment_categories.items()}
+                segment_df = annotation_df[['policy_ID', 'segment_ID', 'segment_content']]
+                segment_df = segment_df.drop_duplicates(['segment_ID'])
+                segment_df.insert(0, 'filename', filename)
+                segment_df['category_ID'] = [segment_categories[seg] for seg in segment_df['segment_ID']]
+
                 all_annotation_df = pd.concat([all_annotation_df, annotation_df], axis=0)
-    shuffled_annotation_df = shuffle(all_annotation_df)
-    train_annotation_df = shuffled_annotation_df.iloc[:int(len(shuffled_annotation_df)*0.9), :]
-    test_annotation_df = shuffled_annotation_df.iloc[int(len(shuffled_annotation_df)*0.9):, :]
-    all_annotation_df.to_csv(os.path.join(data_Path, 'all_annotations.csv'), index=False)
-    train_annotation_df.to_csv(os.path.join(data_Path, 'train_annotations.csv'), index=False)
-    test_annotation_df.to_csv(os.path.join(data_Path, 'test_annotations.csv'), index=False)
+                all_segment_df = pd.concat([all_segment_df, segment_df], axis=0)
+
+    # shuffled_annotation_df = shuffle(all_annotation_df)
+    # train_annotation_df = shuffled_annotation_df.iloc[:int(len(shuffled_annotation_df)*0.9), :]
+    # test_annotation_df = shuffled_annotation_df.iloc[int(len(shuffled_annotation_df)*0.9):, :]
+    # all_annotation_df.to_csv(os.path.join(data_Path, 'all_annotations.csv'), index=False)
+    # train_annotation_df.to_csv(os.path.join(data_Path, 'train_annotations.csv'), index=False)
+    # test_annotation_df.to_csv(os.path.join(data_Path, 'test_annotations.csv'), index=False)
+
+    shuffled_segment_df = shuffle(all_segment_df)
+    train_segment_df = shuffled_segment_df.iloc[:int(len(shuffled_segment_df)*0.9), :]
+    test_segment_df = shuffled_segment_df.iloc[int(len(shuffled_segment_df)*0.9):, :]
+    all_segment_df.to_csv(os.path.join(data_Path, 'all_segment.csv'), index=False)
+    train_segment_df.to_csv(os.path.join(data_Path, 'train_segment.csv'), index=False)
+    test_segment_df.to_csv(os.path.join(data_Path, 'test_segment.csv'), index=False)
 
 
-# process_segment_train_data()
+
+process_segment_train_data()
