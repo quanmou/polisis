@@ -14,7 +14,7 @@ from src.bert.practice_clf import BertClassifier
 
 app = Flask(__name__)
 
-bert_ckpt1 = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-06-27_21")
+bert_ckpt1 = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-07-01_00")
 bert_clf = BertClassifier(init_checkpoint=bert_ckpt1)
 
 
@@ -26,7 +26,7 @@ def practice():
         print(recv_data.decode())
         json_re = json.loads(recv_data)
         segment = json_re['segment']
-        res['bert_topK_labels'] = bert_clf.predict(segment, topK=10)
+        res['categories'] = bert_clf.predict(segment)
 
     return json.dumps(res)
 

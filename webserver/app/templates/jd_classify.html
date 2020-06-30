@@ -31,9 +31,9 @@
                     if (jqXHR.status === 200) {
                         let data = jqXHR.responseJSON;
                         let output = ''
-                        for (let kvlist of data['bert_topK_labels'].entries()) {
+                        for (let kvlist of data['categories'].entries()) {
                             let curVal = kvlist[1];
-                            let s = curVal[0].toString() + ': ' + curVal[1].toString();
+                            let s = curVal[0].toString() + ':    ' + curVal[1].toString();
                             output = output + s + '<br>';
                         }
                         $("#practice").html(output);
