@@ -29,11 +29,11 @@ if True:
         "The input data dir. Should contain the .csv files (or other data files) for the task.")
 
     flags.DEFINE_string(
-        "training_data", f'{DIR}/data/train_annotations.csv',
+        "training_data", f'{DIR}/data/train_segment.csv',
         "The tokenized training data. Usually formatted as InputFeatures")
 
     flags.DEFINE_string(
-        "test_data", f'{DIR}/data/test_annotations.csv',
+        "test_data", f'{DIR}/data/test_segment.csv',
         "The tokenized training data. Usually formatted as InputFeatures")
 
     flags.DEFINE_string(
@@ -63,7 +63,7 @@ if True:
     flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
     flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
     flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
-    flags.DEFINE_integer("num_train_epochs", 2, "Total number of training epochs to perform.")
+    flags.DEFINE_integer("num_train_epochs", 3, "Total number of training epochs to perform.")
     flags.DEFINE_float("warmup_proportion", 0.1,
                        "Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training.")
     flags.DEFINE_integer("save_checkpoints_steps", 10, "How often to save the model checkpoint.")
@@ -108,13 +108,13 @@ class DataProcessor:
     def get_train_examples(self, training_data):
         """See base class."""
         jd_df = self._read_csv(training_data)
-        jd_data = jd_df[['segment_content', 'category_id']].values.tolist()
+        jd_data = jd_df[['segment_content', 'category_ID']].values.tolist()
         return self.create_examples(jd_data, 'training')
 
     def get_test_examples(self, test_data):
         """See base class."""
         jd_df = self._read_csv(test_data)
-        jd_data = jd_df[['segment_content', 'category_id']].values.tolist()
+        jd_data = jd_df[['segment_content', 'category_ID']].values.tolist()
         return self.create_examples(jd_data, 'testing')
 
     def get_labels(self):
@@ -131,7 +131,7 @@ class DataProcessor:
             guid = "%s-%s" % (set_type, tokenization.convert_to_unicode(str(i+1)))
             text_a = tokenization.convert_to_unicode(str(line[0]))
             text_b = tokenization.convert_to_unicode('')
-            label = tokenization.convert_to_unicode(str(line[1]))
+            label = list(map(float, line[1].split(',')))
             examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
@@ -281,36 +281,6 @@ def generate_batch(data, batch_size):
         yield batch_input_ids, batch_input_mask, batch_segment_ids, batch_label_id
 
 
-def average_gradients(tower_grads):
-    average_grads = []
-    for grad_and_vars in zip(*tower_grads):
-        grads = []
-        for g, _ in grad_and_vars:
-            expanded_g = tf.expand_dims(g, 0)
-            grads.append(expanded_g)
-
-        grad = tf.concat(grads, 0)
-        grad = tf.reduce_mean(grad, 0)
-
-        v = grad_and_vars[0][1]
-        grad_and_var = (grad, v)
-        average_grads.append(grad_and_var)
-
-    return average_grads
-
-
-PS_OPS = ['Variable', 'VariableV2', 'AutoReloadVariable']
-def assign_to_device(device, ps_device='/cpu:0'):
-    def _assign(op):
-        node_def = op if isinstance(op, tf.NodeDef) else op.node_def
-        if node_def.op in PS_OPS:
-            return "/" + ps_device
-        else:
-            return device
-
-    return _assign
-
-
 class BertClassifier:
     def __init__(self, init_checkpoint=FLAGS.init_checkpoint, is_training=False):
         """
@@ -335,8 +305,8 @@ class BertClassifier:
         self.ids_placeholder = tf.placeholder(tf.int32, shape=[None, FLAGS.max_seq_length])
         self.mask_placeholder = tf.placeholder(tf.int32, shape=[None, FLAGS.max_seq_length])
         self.segment_placeholder = tf.placeholder(tf.int32, shape=[None, FLAGS.max_seq_length])
-        self.labels_placeholder = tf.placeholder(tf.int32, shape=[None])
-        self.loss, self.per_example_loss, self.logits, self.probabilities = self.create_model()
+        self.labels_placeholder = tf.placeholder(tf.float32, shape=[None, len(self.labels)])
+        self.loss, self.logits, self.sigmoid_logits = self.create_model()
 
         self.sess_config = tf.ConfigProto()
         self.sess_config.allow_soft_placement = True
@@ -373,12 +343,10 @@ class BertClassifier:
                 output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
             logits = tf.matmul(output_layer, output_weights, transpose_b=True)
             logits = tf.nn.bias_add(logits, output_bias)
-            probabilities = tf.nn.softmax(logits, axis=-1)
-            log_probs = tf.nn.log_softmax(logits, axis=-1)
-            one_hot_labels = tf.one_hot(self.labels_placeholder, depth=self.num_labels)
-            per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-            loss = tf.reduce_mean(per_example_loss)
-        return loss, per_example_loss, logits, probabilities
+            label_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.labels_placeholder, logits=logits)
+            loss = tf.reduce_mean(label_loss)
+            sigmoid_logits = tf.math.sigmoid(logits)
+        return loss, logits, sigmoid_logits
 
     def train(self, data_file=FLAGS.training_data, reload=False, save_path=FLAGS.output_dir):
         examples = self.data_processor.get_train_examples(os.path.join(FLAGS.input_dir, data_file))
@@ -436,29 +404,25 @@ class BertClassifier:
         for k in range(topK):
             print('top %s accuracy: %s' % (k+1, np.round(topK_correct_count[k] / len(examples), 6)))
 
-    def predict(self, segment='', topK=5):
-        example = self.data_processor.create_examples([[segment, self.labels[0]]], set_type='predict')
+    def predict(self, segment=''):
+        example = self.data_processor.create_examples([[segment, '0,0,0,0,0,0,0,0,0,0']], set_type='predict')
         feature = convert_single_example(0, example[0], FLAGS.max_seq_length, self.tokenizer)
         predict_dict = {self.ids_placeholder: [feature.input_ids],
                         self.mask_placeholder: [feature.input_mask],
-                        self.segment_placeholder: [feature.segment_ids]}
+                        self.segment_placeholder: [feature.segment_ids],
+                        self.labels_placeholder: [feature.label_id]}
 
-        probs = self.sess.run(self.probabilities, feed_dict=predict_dict)
-        topK_index = probs.argpartition(-topK)[:, -topK:]
-        column_index = np.arange(probs.shape[0])[:, None]
-        argsort_index = np.argsort(probs[column_index, topK_index[:, :topK]])
-        sorted_topK_index = topK_index[:, :topK][column_index, argsort_index]
-        sorted_topK_probs = sorted_topK_index[0][::-1]
-        res = [(self.labels[i], str(np.round(probs[0][i], 3))) for i in sorted_topK_probs]
+        sigmoid_output = self.sess.run(self.sigmoid_logits, feed_dict=predict_dict)
+        res = [(label, str(sigmoid_output[0][i])) for i, label in enumerate(self.labels)]
         return res
 
 
 def main(_):
     checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-06-27_21'))
-    # clf = BertClassifier(is_training=True, init_checkpoint=checkpoint)
-    # clf.train(reload=True, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
-    clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
-    clf.evaluate(topK=3)
+    clf = BertClassifier(is_training=True)
+    clf.train(reload=False, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
+    # clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
+    # clf.evaluate(topK=3)
 
 
 if __name__ == '__main__':
