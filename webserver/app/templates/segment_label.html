@@ -23,7 +23,7 @@
             showWaiting();
             let senddata = JSON.stringify(d);
             $.ajax({
-                url: "jd",
+                url: "segment",
                 type: "POST",
                 data: senddata,
                 dataType: "json",
@@ -31,9 +31,9 @@
                     if (jqXHR.status === 200) {
                         let data = jqXHR.responseJSON;
                         let output = ''
-                        for (let kvlist of data['categories'].entries()) {
-                            let curVal = kvlist[1];
-                            let s = curVal[0].toString() + ':    ' + curVal[1].toString();
+                        for (let i = 0, len = data['categories'].length; i < len; i++) {
+                            let curVal = data['categories'][i];
+                            let s = i.toString() + ', ' + curVal[0].toString() + ': &nbsp;&nbsp;' + curVal[1].toString();
                             output = output + s + '<br>';
                         }
                         output = output + '<br>' + "label: " + data['labels'];

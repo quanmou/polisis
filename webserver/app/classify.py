@@ -18,7 +18,7 @@ bert_ckpt1 = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-07-01_00
 bert_clf = BertClassifier(init_checkpoint=bert_ckpt1)
 
 
-@app.route('/jd', methods=['GET', 'POST'])
+@app.route('/segment', methods=['GET', 'POST'])
 def practice():
     recv_data = request.get_data()
     res = {}
@@ -33,7 +33,7 @@ def practice():
 
 @app.route('/')
 def hello_world():
-    return render_template('jd_classify.html')
+    return render_template('segment_label.html')
 
 
 if __name__ == '__main__':
