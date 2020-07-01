@@ -1,21 +1,19 @@
-from flask import Flask, render_template, request
-import json
 import os
 import sys
+import json
 import tensorflow as tf
+from flask import Flask, render_template, request
 
 DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if DIR not in sys.path:
     sys.path.append(DIR)
 
-
 from src.bert.practice_clf import BertClassifier
-
 
 app = Flask(__name__)
 
-bert_ckpt1 = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-07-01_00")
-bert_clf = BertClassifier(init_checkpoint=bert_ckpt1)
+bert_ckpt = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-07-01_00")
+bert_clf = BertClassifier(init_checkpoint=bert_ckpt)
 
 
 @app.route('/segment', methods=['GET', 'POST'])
@@ -42,6 +40,6 @@ if __name__ == '__main__':
     else:
         p = 9005
     app.run(host='0.0.0.0',  # 任何ip都可以访问
-            port=p,       # 端口
+            port=p,          # 端口
             debug=False
             )
