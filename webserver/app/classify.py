@@ -27,7 +27,7 @@ def practice():
         json_re = json.loads(recv_data)
         segment = json_re['segment']
         res['categories'] = bert_clf.predict(segment)
-
+        res['labels'] = ', '.join([str(i) for i, cat in enumerate(res['categories']) if float(cat[1]) >= 0.5])
     return json.dumps(res)
 
 

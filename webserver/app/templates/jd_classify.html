@@ -36,6 +36,7 @@
                             let s = curVal[0].toString() + ':    ' + curVal[1].toString();
                             output = output + s + '<br>';
                         }
+                        output = output + '<br>' + "label: " + data['labels'];
                         $("#practice").html(output);
                     }
                     else {
