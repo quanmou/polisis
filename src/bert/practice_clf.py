@@ -376,33 +376,29 @@ class BertClassifier:
                         saver.save(self.sess, os.path.join(save_path, 'model.ckpt.' + str(epoch) + '.' + str(batch)))
                     batch += 1
 
-    def evaluate(self, data_file=FLAGS.test_data, reload=False, topK=5):
+    def evaluate(self, data_file=FLAGS.test_data, reload=False, threshold=0.5):
         examples = self.data_processor.get_test_examples(os.path.join(FLAGS.input_dir, data_file))
         input_features = get_input_features(examples, self.tokenizer, reload, set_type='test')
         with self.graph.as_default():
             self.sess.run(tf.initialize_all_variables())
-        count, topK_correct_count = 0, [0] * topK
+        correct_count, label_count, predict_count = 0, 0, 0
         for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.eval_batch_size):
             eval_dict = {self.ids_placeholder: ids,
                          self.mask_placeholder: mask,
-                         self.segment_placeholder: segment}
-            probs = self.sess.run(self.probabilities, feed_dict=eval_dict)
-            topK_index = probs.argpartition(-topK)[:, -topK:]
-            column_index = np.arange(probs.shape[0])[:, None]
-            argsort_index = np.argsort(probs[column_index, topK_index[:, :topK]])
-            sorted_topK_index = topK_index[:, :topK][column_index, argsort_index][::-1]
-            for i in range(len(labels)):
-                topK_index = sorted_topK_index[i]
-                for k in range(topK):
-                    topK_correct_count[k] += int(int(labels[i]) in topK_index[:k+1])
-            count += 1
-            if count % 20 == 0:
-                print('evaluate finished %s' % np.round(count * FLAGS.eval_batch_size / len(examples), 3))
-                for k in range(topK):
-                    print('current top %s accuracy: %s' % (k + 1, np.round(topK_correct_count[k] / (count * FLAGS.eval_batch_size), 6)))
-
-        for k in range(topK):
-            print('top %s accuracy: %s' % (k+1, np.round(topK_correct_count[k] / len(examples), 6)))
+                         self.segment_placeholder: segment,
+                         self.labels_placeholder: labels}
+            sigmoid_logits = self.sess.run(self.sigmoid_logits, feed_dict=eval_dict)
+            for i in range(FLAGS.eval_batch_size):
+                predict_label_idx = [i for i, logit in enumerate(sigmoid_logits[i]) if logit >= threshold]
+                correct_count += sum([int(labels[i][idx] == 1.0) for idx in predict_label_idx])
+                label_count += sum(labels[i])
+                predict_count += len(predict_label_idx)
+        precision = round(correct_count / predict_count, 3)
+        recall = round(correct_count / label_count, 3)
+        F1 = round(2 * precision * recall / (precision + recall), 3)
+        print('precision: %s' % precision)
+        print('recall: %s' % recall)
+        print('F1: %s' % F1)
 
     def predict(self, segment=''):
         example = self.data_processor.create_examples([[segment, '0,0,0,0,0,0,0,0,0,0']], set_type='predict')
@@ -418,11 +414,11 @@ class BertClassifier:
 
 
 def main(_):
-    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-06-27_21'))
-    clf = BertClassifier(is_training=True)
-    clf.train(reload=False, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
-    # clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
-    # clf.evaluate(topK=3)
+    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-01_00'))
+    # clf = BertClassifier(is_training=True)
+    # clf.train(reload=False, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
+    clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
+    clf.evaluate(reload=True)
 
 
 if __name__ == '__main__':
