@@ -305,7 +305,7 @@ class BertClassifier:
         self.ids_placeholder = tf.placeholder(tf.int32, shape=[None, FLAGS.max_seq_length])
         self.mask_placeholder = tf.placeholder(tf.int32, shape=[None, FLAGS.max_seq_length])
         self.segment_placeholder = tf.placeholder(tf.int32, shape=[None, FLAGS.max_seq_length])
-        self.labels_placeholder = tf.placeholder(tf.float32, shape=[None, len(self.labels)])
+        self.labels_placeholder = tf.placeholder(tf.float32, shape=[None, self.num_labels])
         self.loss, self.logits, self.sigmoid_logits = self.create_model()
 
         self.sess_config = tf.ConfigProto()
@@ -361,7 +361,7 @@ class BertClassifier:
                                                      num_warmup_steps=num_warmup_steps,
                                                      use_tpu=False)
             self.sess.run(tf.initialize_all_variables())
-            saver = tf.train.Saver()
+            saver = tf.train.Saver(max_to_keep=2)
             for epoch in range(FLAGS.num_train_epochs):
                 batch = 0
                 for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.train_batch_size):
@@ -382,6 +382,8 @@ class BertClassifier:
         with self.graph.as_default():
             self.sess.run(tf.initialize_all_variables())
         correct_count, label_count, predict_count = 0, 0, 0
+        detail_correct_count, detail_label_count, detail_predict_count = \
+            [0] * self.num_labels, [0] * self.num_labels, [0] * self.num_labels
         for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.eval_batch_size):
             eval_dict = {self.ids_placeholder: ids,
                          self.mask_placeholder: mask,
@@ -393,12 +395,33 @@ class BertClassifier:
                 correct_count += sum([int(labels[i][idx] == 1.0) for idx in predict_label_idx])
                 label_count += sum(labels[i])
                 predict_count += len(predict_label_idx)
+
+                # do statistics for each label
+                for idx in predict_label_idx:
+                    detail_predict_count[idx] += 1
+                    if labels[i][idx] == 1.0:
+                        detail_correct_count[idx] += 1
+                for j in range(self.num_labels):
+                    if labels[i][j] == 1.0:
+                        detail_label_count[j] += 1
+
         precision = round(correct_count / predict_count, 3)
         recall = round(correct_count / label_count, 3)
         F1 = round(2 * precision * recall / (precision + recall), 3)
         print('precision: %s' % precision)
         print('recall: %s' % recall)
         print('F1: %s' % F1)
+
+        # precision and recall for each label
+        detail_precision, detail_recall, detail_F1 = [0.0] * self.num_labels, [0.0] * self.num_labels, [0.0] * self.num_labels
+        for i in range(self.num_labels):
+            detail_precision[i] = round(detail_correct_count[i] / detail_predict_count[i], 3)
+            detail_recall[i] = round(detail_correct_count[i] / detail_label_count[i], 3)
+            detail_F1[i] = round(2 * detail_precision[i] * detail_recall[i] / (detail_precision[i] + detail_recall[i]), 3)
+            print("%s: %s, %s, %s" % (self.labels[i], detail_precision[i], detail_recall[i], detail_F1[i]))
+        print(detail_precision)
+        print(detail_recall)
+        print(detail_F1)
 
     def predict(self, segment=''):
         example = self.data_processor.create_examples([[segment, '0,0,0,0,0,0,0,0,0,0']], set_type='predict')
@@ -414,9 +437,9 @@ class BertClassifier:
 
 
 def main(_):
-    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-01_00'))
-    # clf = BertClassifier(is_training=True)
-    # clf.train(reload=False, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
+    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-05_13_4epoch'))
+    # clf = BertClassifier(is_training=True, init_checkpoint=checkpoint)
+    # clf.train(reload=True, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
     clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
     clf.evaluate(reload=True)
 
