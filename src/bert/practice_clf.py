@@ -33,6 +33,10 @@ if True:
         "The tokenized training data. Usually formatted as InputFeatures")
 
     flags.DEFINE_string(
+        "validation_data", f'{DIR}/data/validation_segment.csv',
+        "The tokenized training data. Usually formatted as InputFeatures")
+
+    flags.DEFINE_string(
         "test_data", f'{DIR}/data/test_segment.csv',
         "The tokenized training data. Usually formatted as InputFeatures")
 
@@ -363,20 +367,31 @@ class BertClassifier:
             self.sess.run(tf.initialize_all_variables())
             saver = tf.train.Saver(max_to_keep=2)
             for epoch in range(FLAGS.num_train_epochs):
-                batch = 0
+                batch, correct_count, label_count, predict_count = 0, 0, 0, 0
                 for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.train_batch_size):
                     train_dict = {self.ids_placeholder: ids,
                                   self.mask_placeholder: mask,
                                   self.segment_placeholder: segment,
                                   self.labels_placeholder: labels}
-                    _, train_loss = self.sess.run([train_op, self.loss], feed_dict=train_dict)
+                    _, train_loss, sigmoid_logits = self.sess.run([train_op, self.loss, self.sigmoid_logits], feed_dict=train_dict)
+                    # 统计训练准召
+                    for i in range(FLAGS.train_batch_size):
+                        predict_label_idx = [i for i, logit in enumerate(sigmoid_logits[i]) if logit >= 0.5]
+                        correct_count += sum([int(labels[i][idx] == 1.0) for idx in predict_label_idx])
+                        label_count += sum(labels[i])
+                        predict_count += len(predict_label_idx)
+                    precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
+                    recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
+                    F1 = round(2 * precision * recall / (precision + recall), 3) if (predict_count != 0 and label_count != 0) else 0.0
                     if batch % 10 == 0:
-                        print('Epoch: %d, batch: %d, training loss: %s' % (epoch, batch, train_loss))
+                        print('Epoch: %d, batch: %d, training loss: %s, precision: %s, recall: %s, F1: %s'
+                              % (epoch, batch, train_loss, precision, recall, F1))
+
                     if batch % 100 == 0:
                         saver.save(self.sess, os.path.join(save_path, 'model.ckpt.' + str(epoch) + '.' + str(batch)))
                     batch += 1
 
-    def evaluate(self, data_file=FLAGS.test_data, reload=False, threshold=0.5):
+    def evaluate(self, data_file=FLAGS.validation_data, reload=False, threshold=0.5):
         examples = self.data_processor.get_test_examples(os.path.join(FLAGS.input_dir, data_file))
         input_features = get_input_features(examples, self.tokenizer, reload, set_type='test')
         with self.graph.as_default():
@@ -405,19 +420,18 @@ class BertClassifier:
                     if labels[i][j] == 1.0:
                         detail_label_count[j] += 1
 
-        precision = round(correct_count / predict_count, 3)
-        recall = round(correct_count / label_count, 3)
-        F1 = round(2 * precision * recall / (precision + recall), 3)
-        print('precision: %s' % precision)
-        print('recall: %s' % recall)
-        print('F1: %s' % F1)
+        precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
+        recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
+        F1 = round(2 * precision * recall / (precision + recall), 3) if (predict_count != 0 and label_count != 0) else 0.0
+        print('Total precision: %s， total recall: %s, total F1: %s' % (precision, recall, F1))
 
         # precision and recall for each label
         detail_precision, detail_recall, detail_F1 = [0.0] * self.num_labels, [0.0] * self.num_labels, [0.0] * self.num_labels
         for i in range(self.num_labels):
-            detail_precision[i] = round(detail_correct_count[i] / detail_predict_count[i], 3)
-            detail_recall[i] = round(detail_correct_count[i] / detail_label_count[i], 3)
-            detail_F1[i] = round(2 * detail_precision[i] * detail_recall[i] / (detail_precision[i] + detail_recall[i]), 3)
+            detail_precision[i] = round(detail_correct_count[i] / detail_predict_count[i], 3) if detail_predict_count[i] != 0 else 0.0
+            detail_recall[i] = round(detail_correct_count[i] / detail_label_count[i], 3) if detail_label_count[i] != 0 else 0.0
+            detail_F1[i] = round(2 * detail_precision[i] * detail_recall[i] / (detail_precision[i] + detail_recall[i]), 3) if \
+                (detail_predict_count[i] != 0 and detail_label_count[i] != 0) else 0.0
             print("%s: %s, %s, %s" % (self.labels[i], detail_precision[i], detail_recall[i], detail_F1[i]))
         print(detail_precision)
         print(detail_recall)
