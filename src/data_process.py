@@ -74,12 +74,13 @@ def process_segment_train_data(file_path=threshold_05):
     # test_annotation_df.to_csv(os.path.join(data_Path, 'test_annotations.csv'), index=False)
 
     shuffled_segment_df = shuffle(all_segment_df)
-    train_segment_df = shuffled_segment_df.iloc[:int(len(shuffled_segment_df)*0.9), :]
+    train_segment_df = shuffled_segment_df.iloc[:int(len(shuffled_segment_df)*0.8), :]
+    validation_segment_df = shuffled_segment_df.iloc[int(len(shuffled_segment_df)*0.8):int(len(shuffled_segment_df)*0.9), :]
     test_segment_df = shuffled_segment_df.iloc[int(len(shuffled_segment_df)*0.9):, :]
     all_segment_df.to_csv(os.path.join(data_Path, 'all_segment.csv'), index=False)
     train_segment_df.to_csv(os.path.join(data_Path, 'train_segment.csv'), index=False)
+    validation_segment_df.to_csv(os.path.join(data_Path, 'validation_segment.csv'), index=False)
     test_segment_df.to_csv(os.path.join(data_Path, 'test_segment.csv'), index=False)
-
 
 
 process_segment_train_data()
