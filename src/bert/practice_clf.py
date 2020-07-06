@@ -365,7 +365,8 @@ class BertClassifier:
                                                      num_warmup_steps=num_warmup_steps,
                                                      use_tpu=False)
             self.sess.run(tf.initialize_all_variables())
-            saver = tf.train.Saver(max_to_keep=2)
+            saver = tf.train.Saver(max_to_keep=2, save_relative_paths=True)
+            save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H') + '_' + str(FLAGS.num_train_epochs) + 'epoch')
             for epoch in range(FLAGS.num_train_epochs):
                 batch, correct_count, label_count, predict_count = 0, 0, 0, 0
                 for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.train_batch_size):
@@ -453,7 +454,7 @@ class BertClassifier:
 def main(_):
     checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-05_13_4epoch'))
     # clf = BertClassifier(is_training=True, init_checkpoint=checkpoint)
-    # clf.train(reload=True, save_path=os.path.join(FLAGS.output_dir, datetime.now().strftime('%Y-%m-%d_%H')))
+    # clf.train(reload=True)
     clf = BertClassifier(is_training=False, init_checkpoint=checkpoint)
     clf.evaluate(reload=True)
 
