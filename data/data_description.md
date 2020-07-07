@@ -31,115 +31,230 @@ The final annotation schema consists of 10 data practice categories:
 
 
 # Detailed Classification results
-## change-type
-* privacy-relevant-change
-* unspecified
+* These information block is derived from training data
 
-## notification-type
-* general-notice-in-privacy-policy
-* general-notice-on-website
-* personal-notice
-* unspecified
+|First Party Collection/Use|Third Party Sharing/Collection|User Choice/Control|User Access, Edit and Deletion|Data Retention|Data Security|Policy Change|Do Not Track|International and Specific Audiences|Other|
+|  :----:                  |               :----:         |         :----:    |   :----:                     |  :----:      |  :----:     |  :----:     |  :----:    |  :----:                            |:----:|
+| Choice Scope | Choice Scope | Choice Scope  | | | | | | | |
+| Choice Type | Choice Type | Choice Type | | | | | | | |
+| User Type | User Type | User Type | User Type | | | | | | |
+| Personal Information Type | Personal Information Type | Personal Information Type | | Personal Information Type | | | | | |
+| Purpose | Purpose | Purpose | | | | | | | |
+| Identifiability | Identifiability | | | | | | | | |
+| Does/Does Not | Does/Does Not | | | | | | | | |
+| Collection Mode | | | | | | | | | |
+| Action First-Party | | | | | | | | | |
+| | Action Third Party | | | | | | | | |
+| | Third Party Entity | | | | | | | | |
+| | | | Access Type | | | | | | |
+| | | | Access Scope | | | | | | |
+| | | | | Retention Period | | | | | |
+| | | | | Retention Purpose | | | | | |
+| | | | | | Security Measure | | | | |
+| | | | | | | Change Type | | | |
+| | | | | | | User Choice | | | |
+| | | | | | | Notification Type | | | |
+| | | | | | | | Do Not Track policy | | |
+| | | | | | | | | Audience Type | |
+| | | | | | | | | | Other Type |
 
-## do-not-track-policy
-* honored
-* not-honored
+## Choice Scope
+* Both  (only appears in first_party, third_party)
+* Collection  (only appears in first_party, third_party)
+* Use  (only appeared in first_party, third_party)
+* not-selected  (only appears in first_party, third_party)
+* First party collection  (only appears in user_choice)
+* First party use  (only appears in user_choice)
+* Third party sharing/collection  (only appears in user_choice)
+* Third party use  (only appears in user_choice)
+* Unspecified
 
-## security-measure
-* data-access-limitation
-* generic
-* privacy-review-audit
-* privacy-security-program
-* secure-data-storage
-* secure-data-transfer
-* secure-user-authentication
 
-## personal-information-type
-* computer-information
-* contact
-* cookies-and-tracking-elements
-* demographic
-* financial
-* generic-personal-information
-* health
-* ip-address-and-device-ids
-* location
-* personal-identifier
-* social-media-data
-* survey-data
-* unspecified
-* user-online-activities
-* user-profile
+## Choice Type
+* Browser/device privacy controls
+* Dont use service/feature
+* First-party privacy controls
+* Opt-in
+* Opt-out link
+* Opt-out via contacting company
+* Third-party privacy controls
+* Other
+* not-selected  (only appears in first_party, third_party)
+* Unspecified
 
-## purpose
-* additional-service-feature
-* advertising
-* analytics-research
-* basic-service-feature
-* legal-requirement
-* marketing
-* merger-acquisition
-* personalization-customization
-* service-operation-and-security
-* unspecified
+## User Type
+* User with account
+* User without account
+* not-selected
+* Other
+* Unspecified
 
-## choice-type
-* browser-device-privacy-controls
-* dont-use-service-feature
-* first-party-privacy-controls
-* opt-in
-* opt-out-link
-* opt-out-via-contacting-company
-* third-party-privacy-controls
-* unspecified
+## Personal Information Type
+* Computer information
+* Contact
+* Cookies and tracking elements
+* Demographic
+* Financial
+* Generic personal information
+* Health
+* IP address and device IDs
+* Location 
+* Personal identifier
+* Social media data  (only appears in user_choice, first_party)
+* Survey data
+* User online activities
+* User profile
+* Other 
+* Unspecified 
 
-## third-party-entity
-* collect-on-first-party-website-app
-* receive-shared-with
-* see
-* track-on-first-party-website-app
-* unspecified
+## Purpose
+* Additional service/feature
+* Advertising   
+* Analytics/Research
+* Basic service/feature
+* Legal requirement
+* Marketing  
+* Merger/Acquisition
+* Personalization/Customization
+* Service Operation and Security
+* Other  
+* Unspecified  
 
-## access-type
-* edit-information
-* unspecified
-* view
+## Identifiability
+* Aggregated or anonymized
+* Identifiable
+* not-selected
+* Other
+* Unspecified
 
-## audience-type
-* californians
-* children
-* europeans
+## Does/Does Not
+* Does
+* Does Not
 
-## choice-scope
-* both
-* collection
-* first-party-collection
-* first-party-use
-* third-party-sharing-collection
-* third-party-use
-* unspecified
-* use
+## Collection Mode
+* Implicit
+* Explicit
+* not-selected
+* Unspecified
 
-## action-first-party
-* collect-in-mobile-app
-* collect-on-mobile-website
-* collect-on-website
-* unspecified
+## Action First-Party
+* Collect from user on other websites
+* Collect in mobile app
+* Collect on mobile website
+* Collect on website
+* Receive from other service/third-party (unnamed)
+* Receive from other service/third-party (named)
+* Receive from other parts of company/affiliates
+* Track user on other websites
+* Other
+* Unspecified
 
-## does-does-not
-* does
-* does-not
+## Action Third Party
+* Collect on first party website/app
+* Track on first party website/app
+* Receive/Shared with
+* See
+* Other
+* Unspecified
 
-## retention-period
-* indefinitely
-* limited
-* stated-period
-* unspecified
+## Third Party Entity
+* Named third party
+* Unnamed third party
+* Other part of company/affiliate
+* Public
+* Other users
+* Other
+* Unspecified
 
-## identifiability
-* aggregated-or-anonymized
-* identifiable
-* unspecified
+## Access Type
+* None
+* View
+* Export
+* Edit information
+* Deactivate account
+* Delete account (full)
+* Delete account (partial)
+* Other
+* Unspecified
+
+## Access Scope
+* User account data
+* Profile data
+* Transactional data
+* Other data about user
+* Other
+* Unspecified
+
+## Retention Period
+* Indefinitely
+* Limited
+* Stated Period
+* Other
+* Unspecified
+
+## Retention Purpose
+* Marketing
+* Advertising
+* Service operation and security
+* Analytics/Research
+* Perform service
+* Legal requirement
+* Other
+* Unspecified
+
+## Security Measure
+* Data access limitation
+* Generic
+* Privacy review/audit
+* Privacy/Security program
+* Privacy training
+* Secure data storage
+* Secure data transfer
+* Secure user authentication
+* Other
+* Unspecified
+
+## Change Type
+* Privacy relevant change
+* Non-privacy relevant change
+* In case of merger or acquisition
+* Other
+* Unspecified
+
+## User Choice
+* User participation
+* Opt-in
+* Opt-out
+* None
+* Other
+* Unspecified
+
+## Notification Type
+* General notice in privacy policy
+* General notice on website
+* Personal notice
+* No notification
+* Other
+* Unspecified
+
+## Do Not Track policy
+* Honored
+* Not honored
+* Mentioned, but unclear if honored
+* Other
+
+## Audience Type
+* Californians
+* Children
+* Europeans
+* Citizens from other countries
+* Other
+
+## Other Type
+* Introductory/Generic
+* Privacy contact information
+* Practice not covered
+* Other
 
 # How to create a data practice
 For each segment, an annotator may label zero or more data practices from each category. To create a data practice, 
