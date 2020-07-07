@@ -88,7 +88,7 @@ def process_segment_train_data(file_path=threshold_05):
 
 def get_unique_value():
     all_annotation_df = pd.read_csv(os.path.join(data_path, 'all_annotations.csv'))
-    category_df = all_annotation_df[['category_name', 'attribute_value']]
+    category_df = all_annotation_df[['segment_content', 'category_name', 'attribute_value']]
     first_party_df = category_df.loc[category_df['category_name'] == "First Party Collection/Use"]
     third_party_df = category_df.loc[category_df['category_name'] == "Third Party Sharing/Collection"]
     user_choice_df = category_df.loc[category_df['category_name'] == "User Choice/Control"]
@@ -100,12 +100,19 @@ def get_unique_value():
     audience_df = category_df.loc[category_df['category_name'] == "International and Specific Audiences"]
     other_df = category_df.loc[category_df['category_name'] == "Other"]
 
-    seen = set()
-    for row in first_party_df.iterrows():
-        attributes = json.loads(row[1][1])
-        user_type = attributes.get('Choice Scope', {}).get('value', '')
-        seen.add(user_type)
-    print(seen)
+    # Personal Information Type
+    cols = ['segment_content', 'startIndexInSegment', 'endIndexInSegment', 'selectedText', 'value']
+    pers_info_type_df = pd.DataFrame(columns=cols)
+    try:
+        for row in first_party_df.iterrows():
+            all_attributes = json.loads(row[1][2])
+            pers_attr = all_attributes.get('Personal Information Type')
+            pers_val = [pers_attr.get(c, '') for c in cols[1:]]
+            pers_info_type_df.loc[pers_info_type_df.shape[0] + 1] = [row[1][0]] + pers_val
+    except Exception as e:
+        print(e)
+        print(pers_attr)
+    pers_info_type_df.to_csv(os.path.join(data_path, 'personal_information_type_attributes.csv'), index=False)
 
 
 get_unique_value()
