@@ -1,10 +1,11 @@
 import os
+import json
 import pandas as pd
 from sklearn.utils import shuffle
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-data_Path = os.path.join(os.path.dirname(cur_path), 'data')
-opp_path = os.path.join(data_Path, 'OPP-115')
+data_path = os.path.join(os.path.dirname(cur_path), 'data')
+opp_path = os.path.join(data_path, 'OPP-115')
 sanitized_polices_path = os.path.join(opp_path, 'sanitized_policies')
 consolidation_path = os.path.join(opp_path, 'consolidation')
 threshold_05 = os.path.join(consolidation_path, 'threshold-0.5-overlap-similarity')
@@ -50,7 +51,7 @@ def process_segment_train_data(file_path=threshold_05):
                 policy_segment = all_segments[policy_id]
                 annotation_df = pd.read_csv(os.path.join(file_path, filename),
                                             names=['annotation_ID', 'batch_ID', 'annotator_ID', 'policy_ID',
-                                                   'segment_ID', 'category_name', 'attribute-value', 'date',
+                                                   'segment_ID', 'category_name', 'attribute_value', 'date',
                                                    'policy_URL'])
                 annotation_df.insert(5, 'segment_content',
                                      [policy_segment['polices'][i] for i in annotation_df['segment_ID']])
@@ -69,18 +70,42 @@ def process_segment_train_data(file_path=threshold_05):
     # shuffled_annotation_df = shuffle(all_annotation_df)
     # train_annotation_df = shuffled_annotation_df.iloc[:int(len(shuffled_annotation_df)*0.9), :]
     # test_annotation_df = shuffled_annotation_df.iloc[int(len(shuffled_annotation_df)*0.9):, :]
-    # all_annotation_df.to_csv(os.path.join(data_Path, 'all_annotations.csv'), index=False)
-    # train_annotation_df.to_csv(os.path.join(data_Path, 'train_annotations.csv'), index=False)
-    # test_annotation_df.to_csv(os.path.join(data_Path, 'test_annotations.csv'), index=False)
+    # all_annotation_df.to_csv(os.path.join(data_path, 'all_annotations.csv'), index=False)
+    # train_annotation_df.to_csv(os.path.join(data_path, 'train_annotations.csv'), index=False)
+    # test_annotation_df.to_csv(os.path.join(data_path, 'test_annotations.csv'), index=False)
 
     shuffled_segment_df = shuffle(all_segment_df)
     train_segment_df = shuffled_segment_df.iloc[:int(len(shuffled_segment_df)*0.8), :]
     validation_segment_df = shuffled_segment_df.iloc[int(len(shuffled_segment_df)*0.8):int(len(shuffled_segment_df)*0.9), :]
     test_segment_df = shuffled_segment_df.iloc[int(len(shuffled_segment_df)*0.9):, :]
-    all_segment_df.to_csv(os.path.join(data_Path, 'all_segment.csv'), index=False)
-    train_segment_df.to_csv(os.path.join(data_Path, 'train_segment.csv'), index=False)
-    validation_segment_df.to_csv(os.path.join(data_Path, 'validation_segment.csv'), index=False)
-    test_segment_df.to_csv(os.path.join(data_Path, 'test_segment.csv'), index=False)
+    all_segment_df.to_csv(os.path.join(data_path, 'all_segment.csv'), index=False)
+    train_segment_df.to_csv(os.path.join(data_path, 'train_segment.csv'), index=False)
+    validation_segment_df.to_csv(os.path.join(data_path, 'validation_segment.csv'), index=False)
+    test_segment_df.to_csv(os.path.join(data_path, 'test_segment.csv'), index=False)
 
 
-process_segment_train_data()
+# process_segment_train_data()
+
+def get_unique_value():
+    all_annotation_df = pd.read_csv(os.path.join(data_path, 'all_annotations.csv'))
+    category_df = all_annotation_df[['category_name', 'attribute_value']]
+    first_party_df = category_df.loc[category_df['category_name'] == "First Party Collection/Use"]
+    third_party_df = category_df.loc[category_df['category_name'] == "Third Party Sharing/Collection"]
+    user_choice_df = category_df.loc[category_df['category_name'] == "User Choice/Control"]
+    user_access_df = category_df.loc[category_df['category_name'] == "User Access, Edit and Deletion"]
+    data_retention_df = category_df.loc[category_df['category_name'] == "Data Retention"]
+    data_security_df = category_df.loc[category_df['category_name'] == "Data Security"]
+    policy_change_df = category_df.loc[category_df['category_name'] == "Policy Change"]
+    do_not_track_df = category_df.loc[category_df['category_name'] == "Do Not Track"]
+    audience_df = category_df.loc[category_df['category_name'] == "International and Specific Audiences"]
+    other_df = category_df.loc[category_df['category_name'] == "Other"]
+
+    seen = set()
+    for row in first_party_df.iterrows():
+        attributes = json.loads(row[1][1])
+        user_type = attributes.get('Choice Scope', {}).get('value', '')
+        seen.add(user_type)
+    print(seen)
+
+
+get_unique_value()

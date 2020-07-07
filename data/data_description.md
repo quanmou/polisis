@@ -260,5 +260,5 @@ The final annotation schema consists of 10 data practice categories:
 For each segment, an annotator may label zero or more data practices from each category. To create a data practice, 
 an annotator first selects a practice category and then specifies values and text spans for each of its attributes.
 
-The annotation tool required the selection of a text span for mandatory attributes, but did not require a text-based 
+The annotation tool required the selection of a text span for mandatory attributes, but did not require a text-based 
 justification for optional attributes or attributes marked as “Unspecified”.
