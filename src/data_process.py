@@ -100,18 +100,44 @@ def get_unique_value():
     audience_df = category_df.loc[category_df['category_name'] == "International and Specific Audiences"]
     other_df = category_df.loc[category_df['category_name'] == "Other"]
 
-    # Personal Information Type
-    cols = ['segment_content', 'startIndexInSegment', 'endIndexInSegment', 'selectedText', 'value']
+    # Extract Personal Information Type
+    cols = ['segment_content', 'attributes']
     pers_info_type_df = pd.DataFrame(columns=cols)
-    try:
-        for row in first_party_df.iterrows():
+    attributes = ['startIndexInSegment', 'endIndexInSegment', 'selectedText', 'value']
+    for df in [first_party_df, third_party_df, user_choice_df]:
+        seg_attributes = {}
+        for row in df.iterrows():
+            seg_content = row[1][0]
             all_attributes = json.loads(row[1][2])
             pers_attr = all_attributes.get('Personal Information Type')
-            pers_val = [pers_attr.get(c, '') for c in cols[1:]]
-            pers_info_type_df.loc[pers_info_type_df.shape[0] + 1] = [row[1][0]] + pers_val
-    except Exception as e:
-        print(e)
-        print(pers_attr)
+            pers_val = [pers_attr.get(attr, '') for attr in attributes]
+            if seg_content not in seg_attributes:
+                seg_attributes[seg_content] = [pers_val]
+            else:
+                seg_attributes[seg_content].append(pers_val)
+
+        for seg, attr in seg_attributes.items():
+            attr.sort(key=lambda x: x[0])
+            merged = []
+            for ar in attr:
+                if ar[0] == -1:  # filter startIndex and endIndex is -1
+                    continue
+                if not merged or merged[-1][1] <= ar[0]:
+                    merged.append(ar)
+                else:
+                    if ar[1] <= merged[-1][1]:
+                        continue
+                    if merged[-1][3] == ar[3]:
+                        merged[-1][2] = merged[-1][2] + ar[2][merged[-1][1] - ar[1]:]
+                        merged[-1][1] = max(merged[-1][1], ar[1])
+                    else:
+                        ar[2] = ar[2][merged[-1][1] - ar[1]:]
+                        ar[0] = merged[-1][1]
+                        merged.append(ar)
+            attr_str = '\n'.join(['☀'.join([str(m) for m in merg]) for merg in merged])
+            if attr_str:
+                pers_info_type_df.loc[pers_info_type_df.shape[0] + 1] = [seg] + [attr_str]
+
     pers_info_type_df.to_csv(os.path.join(data_path, 'personal_information_type_attributes.csv'), index=False)
 
 
