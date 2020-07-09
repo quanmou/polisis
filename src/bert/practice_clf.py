@@ -450,6 +450,16 @@ class BertClassifier:
         res = [(label, str(sigmoid_output[0][i])) for i, label in enumerate(self.labels)]
         return res
 
+    def predict_long_text(self, text):
+        segments = text.split('|||')
+        res = []
+        for seg in segments:
+            if seg:
+                pred = self.predict(seg)
+                label_idx = [str(i) for i, p in enumerate(pred) if float(p[1]) >= 0.5]
+                res.append([seg, pred, label_idx])
+        return res
+
 
 def main(_):
     checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-05_13_4epoch'))

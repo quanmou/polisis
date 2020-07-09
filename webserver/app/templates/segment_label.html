@@ -16,10 +16,10 @@
     function classify() {
         if(document.body.style.cursor !== "wait") {
             let d = {};
-            let segment = $("#segment").val();
+            let policy = $("#segment").val();
 
-            d['segment'] = segment;
-            $("#segment_content").html(segment);
+            d['text'] = policy;
+            // $("#segment_content").html(segment);
             showWaiting();
             let senddata = JSON.stringify(d);
             $.ajax({
@@ -31,12 +31,21 @@
                     if (jqXHR.status === 200) {
                         let data = jqXHR.responseJSON;
                         let output = ''
-                        for (let i = 0, len = data['categories'].length; i < len; i++) {
-                            let curVal = data['categories'][i];
-                            let s = i.toString() + ', ' + curVal[0].toString() + ': &nbsp;&nbsp;' + curVal[1].toString();
-                            output = output + s + '<br>';
+                        // for (let i = 0, len = data['categories'].length; i < len; i++) {
+                        //     let curVal = data['categories'][i];
+                        //     let s = i.toString() + ', ' + curVal[0].toString() + ': &nbsp;&nbsp;' + curVal[1].toString();
+                        //     output = output + s + '<br>';
+                        // }
+                        for (let i = 0, len = data['predict'].length; i < len; i++) {
+                            let curSeg = data['predict'][i];
+                            output += curSeg[0] + '<br>';
+                            for (let j = 0, len2 = curSeg[2].length; j < len2; j++) {
+                                let idx = curSeg[2][j];
+                                output += idx.toString() + ', ' + curSeg[1][idx][0] + ': &nbsp;&nbsp;' + curSeg[1][idx][1] + '<br>';
+                            }
+                            output += '-------------------------------------------------------------------' + '<br>'
                         }
-                        output = output + '<br>' + "label: " + data['labels'];
+                        output += '<br>';
                         $("#practice").html(output);
                     }
                     else {

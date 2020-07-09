@@ -12,7 +12,7 @@ from src.bert.practice_clf import BertClassifier
 
 app = Flask(__name__)
 
-bert_ckpt = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-07-01_00")
+bert_ckpt = tf.train.latest_checkpoint(f"{DIR}/model/practice_clf/2020-07-05_13_4epoch")
 bert_clf = BertClassifier(init_checkpoint=bert_ckpt)
 
 
@@ -23,9 +23,12 @@ def practice():
     if recv_data:
         print(recv_data.decode())
         json_re = json.loads(recv_data)
-        segment = json_re['segment']
-        res['categories'] = bert_clf.predict(segment)
-        res['labels'] = ', '.join([str(i) for i, cat in enumerate(res['categories']) if float(cat[1]) >= 0.5])
+        # segment = json_re['segment']
+        # res['categories'] = bert_clf.predict(segment)
+        # res['labels'] = ', '.join([str(i) for i, cat in enumerate(res['categories']) if float(cat[1]) >= 0.5])
+        text = json_re['text']
+        pred = bert_clf.predict_long_text(text)
+        res['predict'] = pred
     return json.dumps(res)
 
 
