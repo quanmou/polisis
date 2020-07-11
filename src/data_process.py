@@ -133,12 +133,18 @@ def get_unique_value():
                     else:
                         ar[2] = ar[2][merged[-1][1] - ar[1]:]
                         ar[0] = merged[-1][1]
-                        merged.append(ar)
+                        if ar[2] != ',' and ar[2] != ' ':
+                            merged.append(ar)
             attr_str = '\n'.join(['☀'.join([str(m) for m in merg]) for merg in merged])
             if attr_str:
                 pers_info_type_df.loc[pers_info_type_df.shape[0] + 1] = [seg] + [attr_str]
 
     pers_info_type_df.to_csv(os.path.join(data_path, 'personal_information_type_attributes.csv'), index=False)
+    shuffle(pers_info_type_df)
+    pers_info_type_train_df = pers_info_type_df.iloc[:int(len(pers_info_type_df) * 0.9), :]
+    pers_info_type_test_df = pers_info_type_df.iloc[int(len(pers_info_type_df) * 0.9):, :]
+    pers_info_type_train_df.to_csv(os.path.join(data_path, 'pers_info_type_train.csv'), index=False)
+    pers_info_type_test_df.to_csv(os.path.join(data_path, 'pers_info_type_test.csv'), index=False)
 
 
 get_unique_value()
