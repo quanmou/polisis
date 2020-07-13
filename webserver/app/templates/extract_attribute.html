@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Attribute{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+    function showWaiting() {
+        $("#btn").enable = false;
+        document.body.style.cursor = "wait";  // 沙漏 (等待)
+    }
+
+    function closeWaiting() {
+        $("#btn").enable = true;
+        document.body.style.cursor = "default";  // 箭头 (默认)
+    }
+
+    function classify() {
+        if(document.body.style.cursor !== "wait") {
+            let d = {};
+            let policy = $("#segment").val();
+
+            d['segment'] = policy;
+            // $("#segment_content").html(segment);
+            showWaiting();
+            let senddata = JSON.stringify(d);
+            $.ajax({
+                url: "segment",
+                type: "POST",
+                data: senddata,
+                dataType: "json",
+                complete: function (jqXHR) {
+                    if (jqXHR.status === 200) {
+                        let data = jqXHR.responseJSON;
+                        let output = ''
+                        // for (let i = 0, len = data['categories'].length; i < len; i++) {
+                        //     let curVal = data['categories'][i];
+                        //     let s = i.toString() + ', ' + curVal[0].toString() + ': &nbsp;&nbsp;' + curVal[1].toString();
+                        //     output = output + s + '<br>';
+                        // }
+
+                        $("#practice").html(data['output']);
+                    }
+                    else {
+                        alert("你输入的句子好像有问题😅换个句子试试🤔");
+                    }
+                    closeWaiting();
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
+
+
+{% block content %}
+<div class="title">
+    <div class="container">
+        <h1>欢迎使用policy信息提取系统！</h1>
+    </div>
+</div>
+<div class="form">
+    <label class="label">请输入segment:</label>
+    <input type="text" id="segment" class="text">
+</div>
+<button type="button" id="btn" class="label" onclick="classify();">提取信息</button><br>
+<div class="form">
+    <label class="label">segment内容:</label>
+    <div id="segment_content" class="text" aria-readonly="true"></div>
+</div>
+<div class="form">
+    <label class="label">预测结果:</label>
+    <div id="practice" class="output" aria-readonly="true"></div>
+</div>
+<div id="waiting">
+    <img src="../static/waiting.gif" />
+</div>
+{% endblock %}
