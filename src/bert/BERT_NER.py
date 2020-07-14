@@ -23,6 +23,7 @@ DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 if DIR not in sys.path:
     sys.path.append(DIR)
 
+flags = tf.flags
 FLAGS = flags.FLAGS
 ## Required parameters
 flags.DEFINE_string("task_name", "ner", "The name of the task to train.")
@@ -62,7 +63,7 @@ flags.DEFINE_integer(
     "Sequences longer than this will be truncated, and sequences shorter "
     "than this will be padded.")
 
-flags.DEFINE_bool("do_train", True, "Whether to run training.")
+flags.DEFINE_bool("do_train", False, "Whether to run training.")
 flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 flags.DEFINE_bool("do_predict", True, "Whether to run the model in inference mode on the test set.")
 flags.DEFINE_integer("train_batch_size", 4, "Total batch size for training.")
@@ -580,16 +581,30 @@ class BertNer:
                                          num_warmup_steps=self.num_warmup_steps,
                                          use_tpu=FLAGS.use_tpu,
                                          use_one_hot_embeddings=FLAGS.use_tpu)
+        is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
+        run_config = tf.contrib.tpu.RunConfig(
+            cluster=None,
+            master=FLAGS.master,
+            model_dir=FLAGS.output_dir,
+            save_checkpoints_steps=FLAGS.save_checkpoints_steps,
+            tpu_config=tf.contrib.tpu.TPUConfig(
+                iterations_per_loop=FLAGS.iterations_per_loop,
+                num_shards=FLAGS.num_tpu_cores,
+                per_host_input_for_training=is_per_host))
         self.estimator = tf.contrib.tpu.TPUEstimator(use_tpu=FLAGS.use_tpu,
                                                      model_fn=self.model_fn,
-                                                     config=None,
+                                                     config=run_config,
                                                      train_batch_size=FLAGS.train_batch_size,
                                                      eval_batch_size=FLAGS.eval_batch_size,
                                                      predict_batch_size=FLAGS.predict_batch_size)
 
     def predict(self, segment):
-        predict_examples = self.data_processor._create_example([[segment, '']], set_type='predict')
-        predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
+        predict_examples = self.data_processor._create_example([[segment, 'O '*len(segment.split(' '))]],
+                                                               set_type='predict')
+        predict_file = os.path.join(FLAGS.output_dir, "predict.temp")
+        batch_tokens, batch_labels = filed_based_convert_examples_to_features(predict_examples, self.label_list,
+                                                                              FLAGS.max_seq_length, self.tokenizer,
+                                                                              predict_file)
         predict_input_fn = file_based_input_fn_builder(input_file=predict_file,
                                                        seq_length=FLAGS.max_seq_length,
                                                        is_training=False,
@@ -603,11 +618,13 @@ class BertNer:
                 predictions.extend(pred)
             for i, prediction in enumerate(predictions):
                 predict = self.id2label[prediction]
-                res.append(predict)
+                if predict != 'X':
+                    res.append(predict)
         else:
             for i, prediction in enumerate(result):
                 predict = self.id2label[prediction]
-                res.append(predict)
+                if predict != 'X':
+                    res.append(predict)
         return res
 
 
