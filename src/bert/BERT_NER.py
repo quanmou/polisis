@@ -151,12 +151,12 @@ class InputFeatures(object):
 
   def __init__(self,
                input_ids,
-               mask,
+               input_mask,
                segment_ids,
                label_ids,
                is_real_example=True):
     self.input_ids = input_ids
-    self.mask = mask
+    self.input_mask = input_mask
     self.segment_ids = segment_ids
     self.label_ids = label_ids
     self.is_real_example = is_real_example
@@ -245,7 +245,7 @@ class NerProcessor(DataProcessor):
         return examples
 
 
-def convert_single_example(ex_index, example, label_list, max_seq_length, tokenizer, mode):
+def convert_single_example(ex_index, example, label_list, max_seq_length, tokenizer):
     """
     :param ex_index: example num
     :param example:
@@ -320,7 +320,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
         logging.info("label_ids: %s" % " ".join([str(x) for x in label_ids]))
     feature = InputFeatures(
         input_ids=input_ids,
-        mask=mask,
+        input_mask=mask,
         segment_ids=segment_ids,
         label_ids=label_ids,
     )
@@ -336,7 +336,7 @@ def filed_based_convert_examples_to_features(examples, label_list, max_seq_lengt
         if ex_index % 5000 == 0:
             logging.info("Writing example %d of %d" % (ex_index, len(examples)))
         feature, ntokens, label_ids = convert_single_example(
-            ex_index, example, label_list, max_seq_length, tokenizer, mode)
+            ex_index, example, label_list, max_seq_length, tokenizer)
         batch_tokens.extend(ntokens)
         batch_labels.extend(label_ids)
         def create_int_feature(values):
@@ -345,7 +345,7 @@ def filed_based_convert_examples_to_features(examples, label_list, max_seq_lengt
 
         features = collections.OrderedDict()
         features["input_ids"] = create_int_feature(feature.input_ids)
-        features["mask"] = create_int_feature(feature.mask)
+        features["input_mask"] = create_int_feature(feature.input_mask)
         features["segment_ids"] = create_int_feature(feature.segment_ids)
         features["label_ids"] = create_int_feature(feature.label_ids)
         tf_example = tf.train.Example(features=tf.train.Features(feature=features))
@@ -358,7 +358,7 @@ def filed_based_convert_examples_to_features(examples, label_list, max_seq_lengt
 def file_based_input_fn_builder(input_file, seq_length, is_training, drop_remainder):
     name_to_features = {
         "input_ids": tf.FixedLenFeature([seq_length], tf.int64),
-        "mask": tf.FixedLenFeature([seq_length], tf.int64),
+        "input_mask": tf.FixedLenFeature([seq_length], tf.int64),
         "segment_ids": tf.FixedLenFeature([seq_length], tf.int64),
         "label_ids": tf.FixedLenFeature([seq_length], tf.int64),
     }
@@ -410,7 +410,7 @@ def crf_loss(logits, labels, mask, num_labels, mask2len):
         )
     log_likelihood,transition = tf.contrib.crf.crf_log_likelihood(logits,labels,transition_params =trans ,sequence_lengths=mask2len)
     loss = tf.math.reduce_mean(-log_likelihood)
-   
+
     return loss, transition
 
 
@@ -467,7 +467,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate, nu
         for name in sorted(features.keys()):
             logging.info("  name = %s, shape = %s" % (name, features[name].shape))
         input_ids = features["input_ids"]
-        mask = features["mask"]
+        mask = features["input_mask"]
         segment_ids = features["segment_ids"]
         label_ids = features["label_ids"]
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
@@ -626,6 +626,111 @@ class BertNer:
                 if predict != 'X':
                     res.append(predict)
         return res
+
+
+class FastPredict:
+    """
+        Speeds up estimator.predict by preventing it from reloading the graph on each call to predict.
+        加速estimator.predict，防止每次predict时重新加载计算图
+        It does this by creating a python generator to keep the predict call open.
+        原理：创建一个python生成器，保持predict进程处于一直开启状态
+        This version supports tf 1.4 and above and can be used by pre-made Estimators like tf.estimator.DNNClassifier.
+        Author: Marc Stogaitis
+     """
+    def __init__(self):
+        self.bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
+        self.seq_length = FLAGS.max_seq_length
+        self.tokenizer = tokenization.FullTokenizer(vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+        self.data_processor = NerProcessor()
+        self.label_list = self.data_processor.get_labels()
+        self.id2label = {i: label for i, label in enumerate(self.label_list)}
+        self.train_examples = None
+        self.num_train_steps = None
+        self.num_warmup_steps = None
+        # self.estimator = estimator
+        self.first_run = True
+        self.closed = False
+        self.model_fn = model_fn_builder(
+            bert_config=self.bert_config,
+            num_labels=len(self.label_list),
+            init_checkpoint=FLAGS.init_checkpoint,
+            learning_rate=FLAGS.learning_rate,
+            num_train_steps=self.num_train_steps,
+            num_warmup_steps=self.num_warmup_steps,
+            use_tpu=FLAGS.use_tpu,
+            use_one_hot_embeddings=FLAGS.use_tpu)
+        is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
+        run_config = tf.contrib.tpu.RunConfig(
+            cluster=None,
+            master=FLAGS.master,
+            model_dir=FLAGS.output_dir,
+            save_checkpoints_steps=FLAGS.save_checkpoints_steps,
+            tpu_config=tf.contrib.tpu.TPUConfig(
+                iterations_per_loop=FLAGS.iterations_per_loop,
+                num_shards=FLAGS.num_tpu_cores,
+                per_host_input_for_training=is_per_host))
+        self.estimator = tf.contrib.tpu.TPUEstimator(
+            use_tpu=FLAGS.use_tpu,
+            model_fn=self.model_fn,
+            config=run_config,
+            train_batch_size=FLAGS.train_batch_size,
+            eval_batch_size=FLAGS.eval_batch_size,
+            predict_batch_size=FLAGS.predict_batch_size)
+
+        self.input_fn = example_input_fn
+
+    def get_feature(self, text, index=0):
+        example = InputExample(f"text_{index}", text, self.label_list[0])
+        feature, _, _ = convert_single_example(index, example, self.label_list, self.seq_length, self.tokenizer)
+        return feature
+
+    def _create_generator(self):
+        while not self.closed:
+            yield self.next_features
+
+    def predict(self, text):
+        """ Runs a prediction on a set of features. Calling multiple times
+            does *not* regenerate the graph which makes predict much faster.
+            feature_batch a list of list of features. IMPORTANT: If you're only classifying 1 thing,
+            you still need to make it a batch of 1 by wrapping it in a list (i.e. predict([my_feature]), not predict(my_feature)
+        """
+        feature = self.get_feature(text)
+        feature_batch = [feature]
+        self.next_features = feature_batch
+        # 每次输入的batch必须保持一致
+        if self.first_run:
+            self.batch_size = len(feature_batch)
+            self.predictions = self.estimator.predict(
+                input_fn=self.input_fn(self._create_generator))
+            self.first_run = False
+        elif self.batch_size != len(feature_batch):
+            raise ValueError(
+                "All batches must be of the same size. First-batch:" + str(self.batch_size) + " This-batch:" + str(
+                    len(feature_batch)))
+
+        results = []
+        for _ in range(self.batch_size):
+            results.append(next(self.predictions))
+        return results
+
+    def close(self):
+        self.closed = True
+        try:
+            next(self.predictions)
+        except:
+            print("Exception in fast_predict. This is probably OK")
+
+
+def example_input_fn(generator):
+    """ An example input function to pass to predict. It must take a generator as input """
+    def _inner_input_fn():
+        dataset = tf.data.Dataset().from_generator(generator, output_types=(tf.float32))
+        dataset = dataset.batch(batch_size=1, drop_remainder=True)
+        iterator = dataset.make_one_shot_iterator()
+        features = iterator.get_next()
+        return {'x': features}
+
+    return _inner_input_fn
 
 
 def main(_):
