@@ -2,7 +2,6 @@ import os
 import sys
 import pandas as pd
 import random
-import numpy as np
 import tensorflow as tf
 import pickle
 from datetime import datetime
@@ -71,7 +70,7 @@ if True:
     flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
     flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
     flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
-    flags.DEFINE_integer("num_train_epochs", 3, "Total number of training epochs to perform.")
+    flags.DEFINE_integer("num_train_epochs", 4, "Total number of training epochs to perform.")
     flags.DEFINE_float("warmup_proportion", 0.1,
                        "Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10% of training.")
     flags.DEFINE_integer("save_checkpoints_steps", 100, "How often to save the model checkpoint.")
@@ -136,7 +135,7 @@ class DataProcessor(object):
                 words_offset.setdefault(i + offset, 'O')
                 offset += len(w)
 
-            attr = attr.split('\n')
+            attr = attr.split('║')
             for ar in attr:
                 s, e, txt, val = ar.split('☀')
                 s, e, offset = int(s), int(e), 0
@@ -425,7 +424,8 @@ class BertNer:
                                                      use_tpu=False)
             self.sess.run(tf.initialize_all_variables())
             saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
-            save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H') + '_' + str(FLAGS.num_train_epochs) + 'epoch')
+            save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H') + '_' +
+                                     str(FLAGS.num_train_epochs) + 'epoch')
             for epoch in range(FLAGS.num_train_epochs):
                 batch, correct_count, label_count, predict_count = 0, 0, 0, 0
                 for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.train_batch_size):
@@ -434,18 +434,8 @@ class BertNer:
                                   self.segment_placeholder: segment,
                                   self.labels_placeholder: labels}
                     _, train_loss, output = self.sess.run([train_op, self.loss, self.output], feed_dict=train_dict)
-                    # 统计训练准召
-                    # for i in range(FLAGS.train_batch_size):
-                    #     correct_count += sum([int(labels[i][idx] == output[idx]) for idx in output if labels[i][idx] != 'O'])
-                        # label_count += sum(labels[i])
-                        # predict_count += len(predict_label_idx)
-                    # precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
-                    # recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
-                    # F1 = round(2 * precision * recall / (precision + recall), 3) if (predict_count != 0 and label_count != 0) else 0.0
-                    precision, recall, F1 = 0, 0, 0
                     if batch % 10 == 0:
-                        print('Epoch: %d, batch: %d, training loss: %s, precision: %s, recall: %s, F1: %s'
-                              % (epoch, batch, train_loss, precision, recall, F1))
+                        print('Epoch: %d, batch: %d, training loss: %s' % (epoch, batch, train_loss))
 
                     if batch % FLAGS.save_checkpoints_steps == 0:
                         saver.save(self.sess, os.path.join(save_path, 'model.ckpt.' + str(epoch) + '.' + str(batch)))
