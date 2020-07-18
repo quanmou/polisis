@@ -5,6 +5,7 @@ from sklearn.utils import shuffle
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(os.path.dirname(cur_path), 'data')
+attribute_path = os.path.join(data_path, 'attribute')
 opp_path = os.path.join(data_path, 'OPP-115')
 sanitized_polices_path = os.path.join(opp_path, 'sanitized_policies')
 consolidation_path = os.path.join(opp_path, 'consolidation')
@@ -100,21 +101,88 @@ def get_unique_value():
     audience_df = category_df.loc[category_df['category_name'] == "International and Specific Audiences"]
     other_df = category_df.loc[category_df['category_name'] == "Other"]
 
+    # Extract Choice Scope
+    extract_attribute([first_party_df, third_party_df, user_choice_df], "Choice Scope", "choice_scope")
+
+    # Extract Choice Type
+    extract_attribute([first_party_df, third_party_df, user_choice_df], "Choice Type", "choice_type")
+
+    # Extract User Type
+    extract_attribute([first_party_df, third_party_df, user_choice_df, user_access_df], "User Type", "user_type")
+
     # Extract Personal Information Type
+    extract_attribute([first_party_df, third_party_df, user_choice_df, data_retention_df], "Personal Information Type", "pers_info_type")
+
+    # Extract Purpose
+    extract_attribute([first_party_df, third_party_df, user_choice_df], "Purpose", "purpose")
+
+    # Extract Identifiability
+    extract_attribute([first_party_df, third_party_df], "Identifiability", "identifiability")
+
+    # Extract Does/Does Not
+    extract_attribute([first_party_df, third_party_df], "Does/Does Not", "does_does_not")
+
+    # Extract Collection Mode
+    extract_attribute([first_party_df], "Collection Mode", "collection_mode")
+
+    # Extract Action First-Party
+    extract_attribute([first_party_df], "Action First-Party", "action_first_party")
+
+    # Extract Action Third Party
+    extract_attribute([third_party_df], "Action Third Party", "action_third_party")
+
+    # Extract Third Party Entity
+    extract_attribute([third_party_df], "Third Party Entity", "third_party_entity")
+
+    # Extract Access Type
+    extract_attribute([user_access_df], "Access Type", "access_type")
+
+    # Extract Access Scope
+    extract_attribute([user_access_df], "Access Scope", "access_scope")
+
+    # Extract Retention Period
+    extract_attribute([data_retention_df], "Retention Period", "retention_period")
+
+    # Extract Retention Purpose
+    extract_attribute([data_retention_df], "Retention Purpose", "retention_purpose")
+
+    # Extract Security Measure
+    extract_attribute([data_security_df], "Security Measure", "security_measure")
+
+    # Extract Change Type
+    extract_attribute([policy_change_df], "Change Type", "change_type")
+
+    # Extract User Choice
+    extract_attribute([policy_change_df], "User Choice", "user_choice")
+
+    # Extract Notification Type
+    extract_attribute([policy_change_df], "Notification Type", "change_type")
+
+    # Extract Do Not Track policy
+    extract_attribute([do_not_track_df], "Do Not Track policy", "change_type")
+
+    # Extract Audience Type
+    extract_attribute([audience_df], "Audience Type", "change_type")
+
+    # Extract Other Type
+    extract_attribute([other_df], "Other Type", "change_type")
+
+
+def extract_attribute(category_df_list, attribute_name, file_name):
     cols = ['segment_content', 'attributes']
-    pers_info_type_df = pd.DataFrame(columns=cols)
+    attribute_df = pd.DataFrame(columns=cols)
     attributes = ['startIndexInSegment', 'endIndexInSegment', 'selectedText', 'value']
-    for df in [first_party_df, third_party_df, user_choice_df]:
+    for df in category_df_list:
         seg_attributes = {}
         for row in df.iterrows():
             seg_content = row[1][0]
             all_attributes = json.loads(row[1][2])
-            pers_attr = all_attributes.get('Personal Information Type')
-            pers_val = [pers_attr.get(attr, '') for attr in attributes]
+            target_attr = all_attributes.get(attribute_name)
+            attr_val = [target_attr.get(attr, '') for attr in attributes]
             if seg_content not in seg_attributes:
-                seg_attributes[seg_content] = [pers_val]
+                seg_attributes[seg_content] = [attr_val]
             else:
-                seg_attributes[seg_content].append(pers_val)
+                seg_attributes[seg_content].append(attr_val)
 
         for seg, attr in seg_attributes.items():
             attr.sort(key=lambda x: x[0])
@@ -135,16 +203,15 @@ def get_unique_value():
                         ar[0] = merged[-1][1]
                         if ar[2] != ',' and ar[2] != ' ':
                             merged.append(ar)
-            attr_str = '\n'.join(['☀'.join([str(m) for m in merg]) for merg in merged])
+            attr_str = '║'.join(['☀'.join([str(m) for m in merg]) for merg in merged])
             if attr_str:
-                pers_info_type_df.loc[pers_info_type_df.shape[0] + 1] = [seg] + [attr_str]
-
-    pers_info_type_df.to_csv(os.path.join(data_path, 'personal_information_type_attributes.csv'), index=False)
-    shuffle(pers_info_type_df)
-    pers_info_type_train_df = pers_info_type_df.iloc[:int(len(pers_info_type_df) * 0.9), :]
-    pers_info_type_test_df = pers_info_type_df.iloc[int(len(pers_info_type_df) * 0.9):, :]
-    pers_info_type_train_df.to_csv(os.path.join(data_path, 'pers_info_type_train.csv'), index=False)
-    pers_info_type_test_df.to_csv(os.path.join(data_path, 'pers_info_type_test.csv'), index=False)
-
+                attribute_df.loc[attribute_df.shape[0] + 1] = [seg] + [attr_str]
+    attribute_df.to_csv(os.path.join(attribute_path, file_name + '.csv'), index=False)
+    shuffle(attribute_df)
+    attribute_train_df = attribute_df.iloc[:int(len(attribute_df) * 0.9), :]
+    attribute_test_df = attribute_df.iloc[int(len(attribute_df) * 0.9):, :]
+    attribute_train_df.to_csv(os.path.join(attribute_path, file_name + '_train.csv'), index=False)
+    attribute_test_df.to_csv(os.path.join(attribute_path, file_name + '_test.csv'), index=False)
+    print('Finished extraction for attribute: %s ' % attribute_name)
 
 get_unique_value()
