@@ -2,17 +2,18 @@ import os
 import sys
 import json
 from flask import Flask, render_template, request
+import tensorflow as tf
 
 DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if DIR not in sys.path:
     sys.path.append(DIR)
 
-from src.bert.BERT_NER import BertNer
+from src.bert.extract_attribute import BertNer
 
 app = Flask(__name__)
 
-# bert_ckpt = tf.train.latest_checkpoint(f"{DIR}/model/attribute_model/2020-07-12_01_1epoch")
-bert_ner = BertNer()
+checkpoint = tf.train.latest_checkpoint(f"{DIR}/model/attribute_model/2020-07-18_21_4epoch")
+bert_ner = BertNer(init_checkpoint=checkpoint)
 
 
 @app.route('/segment', methods=['GET', 'POST'])
@@ -26,7 +27,7 @@ def practice():
         output = bert_ner.predict(segment)
         labels = []
         for i, word in enumerate(segment.split(' ')):
-            if output[i+1] == 'O':
+            if output[i+1] == 'O' or output[i+1] == '[PAD]':
                 labels.append(word)
             else:
                 labels.append(word + '(' + output[i+1] + ')')
