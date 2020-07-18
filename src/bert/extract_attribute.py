@@ -25,15 +25,18 @@ if True:
     num_gpus = len(os.environ['CUDA_VISIBLE_DEVICES'].split(','))
 
     flags.DEFINE_string(
-        "data_dir", f'{DIR}/data',
+        "data_dir", f'{DIR}/data/',
         "The input data dir. Should contain the .csv files (or other data files) for the task.")
 
     flags.DEFINE_string(
-        "training_data", f'{DIR}/data/pers_info_type_train.csv',
+        "model_dir", f'{DIR}/model/', "model dir.")
+
+    flags.DEFINE_string(
+        "training_data", f'{DIR}/data/attribute/pers_info_type_train.csv',
         "The tokenized training data. Usually formatted as InputFeatures")
 
     flags.DEFINE_string(
-        "test_data", f'{DIR}/data/pers_info_type_test.csv',
+        "test_data", f'{DIR}/data/attribute/pers_info_type_test.csv',
         "The tokenized training data. Usually formatted as InputFeatures")
 
     flags.DEFINE_string(
@@ -375,6 +378,7 @@ class BertNer:
         self.sess_config.gpu_options.allow_growth = True
         self.sess_config.gpu_options.per_process_gpu_memory_fraction = 1
         self.sess = tf.Session(config=self.sess_config)
+
         tvars = tf.trainable_variables()
         (assignment_map, initialized_variable_names) = \
             modeling.get_assignment_map_from_checkpoint(tvars, self.init_checkpoint)
@@ -420,7 +424,7 @@ class BertNer:
                                                      num_warmup_steps=num_warmup_steps,
                                                      use_tpu=False)
             self.sess.run(tf.initialize_all_variables())
-            saver = tf.train.Saver(max_to_keep=2, save_relative_paths=True)
+            saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
             save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H') + '_' + str(FLAGS.num_train_epochs) + 'epoch')
             for epoch in range(FLAGS.num_train_epochs):
                 batch, correct_count, label_count, predict_count = 0, 0, 0, 0
@@ -432,10 +436,9 @@ class BertNer:
                     _, train_loss, output = self.sess.run([train_op, self.loss, self.output], feed_dict=train_dict)
                     # 统计训练准召
                     # for i in range(FLAGS.train_batch_size):
-                    #     predict_label_idx = [i for i, logit in enumerate(sigmoid_logits[i]) if logit >= 0.5]
-                    #     correct_count += sum([int(labels[i][idx] == 1.0) for idx in predict_label_idx])
-                    #     label_count += sum(labels[i])
-                    #     predict_count += len(predict_label_idx)
+                    #     correct_count += sum([int(labels[i][idx] == output[idx]) for idx in output if labels[i][idx] != 'O'])
+                        # label_count += sum(labels[i])
+                        # predict_count += len(predict_label_idx)
                     # precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
                     # recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
                     # F1 = round(2 * precision * recall / (precision + recall), 3) if (predict_count != 0 and label_count != 0) else 0.0
@@ -455,23 +458,40 @@ class BertNer:
                         self.mask_placeholder: [feature.input_mask],
                         self.segment_placeholder: [feature.segment_ids],
                         self.labels_placeholder: [feature.label_ids]}
-        output = self.sess.run(self.output, predict_dict)
-        res = [self.labels[i] for i in output[0]]
+        result = self.sess.run(self.output, feed_dict=predict_dict)
+        res = []
+        if FLAGS.crf:
+            predictions = []
+            for m, pred in enumerate(result):
+                predictions.extend(pred)
+            for i, prediction in enumerate(predictions):
+                predict = self.labels[prediction]
+                if predict != 'X':
+                    res.append(predict)
+        else:
+            for i, prediction in enumerate(result):
+                predict = self.labels[prediction]
+                if predict != 'X':
+                    res.append(predict)
         return res
 
 
 def main(_):
-    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-12_02_3epoch'))
-    # clf = BertNer(is_training=True)
-    # clf.train(reload=True)
     segment = "What is a Flash cookie? Local storage objects, also known as Flash cookies, are similar in function " \
               "to browser cookies in that they store some information about you or your activities on our Websites. " \
               "We use Flash cookies in certain situations where we use Flash to provide some content such as video " \
               "clips or animation. The options within your browser may not prevent the setting of Flash cookies. " \
               "To manage Flash cookies please click here: " \
               "http://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager07.html. <br> <br>"
-    clf = BertNer(is_training=True)
-    clf.predict(segment)
+    # checkpoint = FLAGS.init_checkpoint
+    # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.model_dir, 'conll2003'))
+    # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.model_dir, 'attribute_model'))
+    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-18_20_3epoch'))
+    # clf = BertNer(is_training=True, init_checkpoint=checkpoint)
+    # clf.train(reload=False)
+    clf = BertNer(is_training=False, init_checkpoint=checkpoint)
+    output = clf.predict(segment)
+    print(output)
 
 
 if __name__ == "__main__":
