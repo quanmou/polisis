@@ -411,7 +411,7 @@ class BertNer:
             return loss, logits, predict
 
     def train(self, data_file=FLAGS.training_data, reload=False, save_path=FLAGS.output_dir):
-        examples = self.data_processor.get_train_examples(os.path.join(FLAGS.data_dir, data_file))
+        examples = self.data_processor.get_train_examples(data_file)
         input_features = get_input_features(examples, self.labels, self.tokenizer, reload, set_type='train')
         random.shuffle(input_features)
         num_train_steps = int(len(input_features) / FLAGS.train_batch_size * FLAGS.num_train_epochs)
@@ -423,8 +423,8 @@ class BertNer:
                                                      num_warmup_steps=num_warmup_steps,
                                                      use_tpu=False)
             self.sess.run(tf.initialize_all_variables())
-            saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
-            save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H') + '_' +
+            saver = tf.train.Saver(max_to_keep=0, save_relative_paths=True)
+            save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H_%M') + '_' +
                                      str(FLAGS.num_train_epochs) + 'epoch')
             for epoch in range(FLAGS.num_train_epochs):
                 batch, correct_count, label_count, predict_count = 0, 0, 0, 0
@@ -434,12 +434,105 @@ class BertNer:
                                   self.segment_placeholder: segment,
                                   self.labels_placeholder: labels}
                     _, train_loss, output = self.sess.run([train_op, self.loss, self.output], feed_dict=train_dict)
-                    if batch % 10 == 0:
-                        print('Epoch: %d, batch: %d, training loss: %s' % (epoch, batch, train_loss))
 
+                    # 统计准召
+                    for i in range(FLAGS.train_batch_size):
+                        out, label = [], []
+                        for idx in output[i]:
+                            if idx == 0:
+                                break
+                            if idx != 2:
+                                out.append(self.labels[idx])
+                        for idx in labels[i]:
+                            if idx == 0:
+                                break
+                            if idx != 2:
+                                label.append(self.labels[idx])
+                        corr, label, pred = self.stat(out[1:], label[1:])
+                        correct_count += corr
+                        label_count += label
+                        predict_count += pred
+                    precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
+                    recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
+                    F1 = round(2 * precision * recall / (precision + recall), 3) if (
+                            precision + recall != 0) else 0.0
+
+                    if batch % 10 == 0:
+                        print('Epoch: %d, batch: %d, training loss: %s, precision: %s, recall: %s, F1: %s'
+                              % (epoch, batch, train_loss, precision, recall, F1))
                     if batch % FLAGS.save_checkpoints_steps == 0:
                         saver.save(self.sess, os.path.join(save_path, 'model.ckpt.' + str(epoch) + '.' + str(batch)))
                     batch += 1
+
+    def evaluate(self, data_file=FLAGS.test_data, reload=False):
+        examples = self.data_processor.get_test_examples(data_file)
+        input_features = get_input_features(examples, self.labels, self.tokenizer, reload, set_type='eval')
+        with self.graph.as_default():
+            self.sess.run(tf.initialize_all_variables())
+        correct_count, label_count, predict_count = 0, 0, 0
+        for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.eval_batch_size):
+            eval_dict = {self.ids_placeholder: ids,
+                         self.mask_placeholder: mask,
+                         self.segment_placeholder: segment,
+                         self.labels_placeholder: labels}
+            output = self.sess.run(self.output, feed_dict=eval_dict)
+            for i in range(FLAGS.eval_batch_size):
+                out, label = [], []
+                for idx in output[i]:
+                    if idx == 0:
+                        break
+                    if idx != 2:
+                        out.append(self.labels[idx])
+                for idx in labels[i]:
+                    if idx == 0:
+                        break
+                    if idx != 2:
+                        label.append(self.labels[idx])
+                corr, label, pred = self.stat(out[1:], label[1:])
+                correct_count += corr
+                label_count += label
+                predict_count += pred
+
+        precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
+        recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
+        F1 = round(2 * precision * recall / (precision + recall), 3) if (
+                    predict_count + recall != 0) else 0.0
+        print('Total precision: %s， total recall: %s, total F1: %s' % (precision, recall, F1))
+
+    @staticmethod
+    def stat(predict, label):
+        def find_entity(symbols):
+            entity, in_flag, start_idx = [], False, 0
+            for i, ent in enumerate(symbols):
+                if ent.startswith('B'):
+                    if in_flag:
+                        entity.append([start_idx, i, symbols[i - 1][2:]])
+                        start_idx = i
+                    else:
+                        in_flag = True
+                        start_idx = i
+                elif ent.startswith('I'):
+                    if ent[2:] != symbols[i - 1][2:] and in_flag:
+                        entity.append([start_idx, i, symbols[i - 1][2:]])
+                        in_flag = False
+                elif ent.startswith('O'):
+                    if in_flag:
+                        entity.append([start_idx, i, symbols[i - 1][2:]])
+                        in_flag = False
+            return entity
+
+        pred_ent = find_entity(predict)
+        label_ent = find_entity(label)
+        pred_count = len(pred_ent)
+        label_count = len(label_ent)
+        corr_count = 0
+
+        for item in pred_ent:
+            for ent in label[item[0]:item[1]]:
+                if item[2] == ent[2:]:
+                    corr_count += 1
+                    break
+        return corr_count, label_count, pred_count
 
     def predict(self, segment=''):
         example = self.data_processor._create_example([[segment, 'O '*len(segment.split(' '))]], set_type='predict')
@@ -476,12 +569,14 @@ def main(_):
     # checkpoint = FLAGS.init_checkpoint
     # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.model_dir, 'conll2003'))
     # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.model_dir, 'attribute_model'))
-    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-18_20_3epoch'))
+    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-20_00_4epoch'))
     # clf = BertNer(is_training=True, init_checkpoint=checkpoint)
     # clf.train(reload=False)
+    # clf = BertNer(is_training=False, init_checkpoint=checkpoint)
+    # output = clf.predict(segment)
+    # print(output)
     clf = BertNer(is_training=False, init_checkpoint=checkpoint)
-    output = clf.predict(segment)
-    print(output)
+    clf.evaluate()
 
 
 if __name__ == "__main__":
