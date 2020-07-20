@@ -423,8 +423,8 @@ class BertNer:
                                                      num_warmup_steps=num_warmup_steps,
                                                      use_tpu=False)
             self.sess.run(tf.initialize_all_variables())
-            saver = tf.train.Saver(max_to_keep=0, save_relative_paths=True)
-            save_path = os.path.join(save_path, datetime.now().strftime('%Y-%m-%d_%H_%M') + '_' +
+            saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
+            save_path = os.path.join(save_path, datetime.now().strftime('%Y_%m_%d_%H_%M') + '_' +
                                      str(FLAGS.num_train_epochs) + 'epoch')
             for epoch in range(FLAGS.num_train_epochs):
                 batch, correct_count, label_count, predict_count = 0, 0, 0, 0
