@@ -18,9 +18,8 @@ cho_scope_ner_dict = {
     "Third party sharing/collection": ["B-TPS", "I-TPS"],
     "Third party use": ["B-TPU", "I-TPU"]
 }
-
-cho_scope_ner_labels = ["O", "X", "B-BOTH", "I-BOTH", "B-COL", "I-COL", "B-USE", "I-USE", "B-FPC", "I-FPC", "B-FPU",
-                        "I-FPU", "B-TPS", "I-TPS", "B-TPU", "I-TPU"]
+cho_scope_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-BOTH", "I-BOTH", "B-COL", "I-COL", "B-USE", "I-USE", "B-FPC",
+                        "I-FPC", "B-FPU", "I-FPU", "B-TPS", "I-TPS", "B-TPU", "I-TPU"]
 
 
 ## Choice Type
@@ -34,6 +33,36 @@ cho_scope_ner_labels = ["O", "X", "B-BOTH", "I-BOTH", "B-COL", "I-COL", "B-USE",
 # * Other
 # * not-selected  (only appears in first_party, third_party)
 # * Unspecified
+cho_type_ner_dict = {
+    "Browser/device privacy controls": ["B-BRO", "I-BRO"],
+    "Dont use service/feature": ["B-DON", "I-DON"],
+    "First-party privacy controls": ["B-FIR", "I-FIR"],
+    "Opt-in": ["B-OPI", "I-OPI"],
+    "Opt-out link": ["B-OPU", "I-OPU"],
+    "Opt-out via contacting company": ["B-OPUC", "I-OPUC"],
+    "Third-party privacy controls": ["B-THD", "I-THD"],
+    "Other": ["B-OTH", "I-OTH"],
+    "Unspecified": ["B-UNS", "I-UNS"]
+}
+cho_type_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-BRO", "I-BRO", "B-DON", "I-DON", "B-FIR", "I-FIR", "B-OPI",
+                       "I-OPI", "B-OPU", "I-OPU", "B-OPUC", "I-OPUC", "B-THD", "I-THD", "B-OTH", "I-OTH", "B-UNS",
+                       "I-UNS"]
+
+
+## User Type
+# * User with account
+# * User without account
+# * not-selected
+# * Other
+# * Unspecified
+user_type_ner_dict = {
+    "User with account": ["B-UWA", "I-UWA"],
+    "User without account": ["B-UWO", "I-UWO"],
+    "Other": ["B-OTH", "I-OTH"],
+    "Unspecified": ["B-UNS", "I-UNS"]
+}
+user_type_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-UWA", "I-UWA", "B-UWO", "I-UWO", "B-OTH", "I-OTH", "B-UNS",
+                        "I-UNS"]
 
 
 
