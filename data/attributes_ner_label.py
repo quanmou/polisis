@@ -16,10 +16,11 @@ cho_scope_ner_dict = {
     "First party collection": ["B-FPC", "I-FPC"],
     "First party use": ["B-FPU", "I-FPU"],
     "Third party sharing/collection": ["B-TPS", "I-TPS"],
-    "Third party use": ["B-TPU", "I-TPU"]
+    "Third party use": ["B-TPU", "I-TPU"],
+    "Unspecified": ["B-UNS", "I_UNS"]
 }
 cho_scope_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-BOTH", "I-BOTH", "B-COL", "I-COL", "B-USE", "I-USE", "B-FPC",
-                        "I-FPC", "B-FPU", "I-FPU", "B-TPS", "I-TPS", "B-TPU", "I-TPU"]
+                        "I-FPC", "B-FPU", "I-FPU", "B-TPS", "I-TPS", "B-TPU", "I-TPU", "B-UNS", "I_UNS"]
 
 
 ## Choice Type
@@ -107,3 +108,29 @@ pers_info_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-COM", "I-COM", "B-CON", "
                         "I-DEM", "B-FIN", "I-FIN", "B-GEN", "I-GEN", "B-HEA", "I-HEA", "B-IP", "I-IP", "B-LOC", "I-LOC",
                         "B-PER", "I-PER", "B-SOC", "I-SOC", "B-SUR", "I-SUR", "B-ACT", "I-ACT", "B-PRO", "I-PRO",
                         "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
+
+
+
+
+attribute_infos = {
+    "Choice Scope": {
+        "dict": cho_scope_ner_dict,
+        "label": cho_scope_ner_labels,
+        "file_prefix": "choice_scope"
+    },
+    "Choice Type": {
+        "dict": cho_type_ner_dict,
+        "label": cho_type_ner_labels,
+        "file_prefix": "choice_type"
+    },
+    "User Type": {
+        "dict": user_type_ner_dict,
+        "label": user_type_ner_labels,
+        "file_prefix": "user_type"
+    },
+    "Personal Information Type": {
+        "dict": pers_info_ner_dict,
+        "label": pers_info_ner_labels,
+        "file_prefix": "pers_info_type"
+    }
+}

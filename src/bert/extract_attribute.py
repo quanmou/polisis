@@ -13,7 +13,7 @@ if DIR not in sys.path:
 import src.bert.modeling as modeling
 import src.bert.optimization as optimization
 import src.bert.tokenization as tokenization
-import data.attributes_ner_label as ner_label
+import data.attributes_ner_label as attr_ner_label
 
 if True:
     flags = tf.flags
@@ -108,12 +108,22 @@ class InputFeatures(object):
 
 class DataProcessor(object):
     """Base class for data converters for sequence classification data sets."""
+    def __init__(self, attribute_name):
+        self.attribute_name = attribute_name
+        self.attribute_info = attr_ner_label.attribute_infos[attribute_name]
+        self.attribute_dict = self.attribute_info['dict']
+        self.attribute_label = self.attribute_info['label']
+        self.file_prefix = self.attribute_info['file_prefix']
 
-    def get_train_examples(self, data_dir):
+    def get_train_examples(self):
         """Gets a collection of `InputExample`s for the train set."""
         raise NotImplementedError()
 
-    def get_dev_examples(self, data_dir):
+    def get_dev_examples(self):
+        """Gets a collection of `InputExample`s for the dev set."""
+        raise NotImplementedError()
+
+    def get_test_examples(self):
         """Gets a collection of `InputExample`s for the dev set."""
         raise NotImplementedError()
 
@@ -121,8 +131,7 @@ class DataProcessor(object):
         """Gets the list of labels for this data set."""
         raise NotImplementedError()
 
-    @classmethod
-    def _read_data(cls, input_file):
+    def _read_data(self, input_file):
         """Read a BIO data!"""
         df = pd.read_csv(input_file)
         lines = []
@@ -141,9 +150,9 @@ class DataProcessor(object):
                 s, e, offset = int(s), int(e), 0
                 for i, w in enumerate(txt.split(' ')):
                     if i == 0:
-                        words_offset[s + i + offset] = ner_label.pers_info_ner_dict[val][0]
+                        words_offset[s + i + offset] = self.attribute_dict[val][0]
                     else:
-                        words_offset[s + i + offset] = ner_label.pers_info_ner_dict[val][1]
+                        words_offset[s + i + offset] = self.attribute_dict[val][1]
                     offset += len(w)
 
             labels = " ".join(words_offset.values())
@@ -153,19 +162,22 @@ class DataProcessor(object):
 
 
 class NerProcessor(DataProcessor):
-    def get_train_examples(self, data_file):
+    def __init__(self, attribute_name):
+        super(NerProcessor, self).__init__(attribute_name=attribute_name)
+
+    def get_train_examples(self):
         return self._create_example(
-            self._read_data(data_file), "train"
+            self._read_data(f'{DIR}/data/attribute/{self.file_prefix}_train.csv'), "train"
         )
 
-    def get_dev_examples(self, data_file):
+    def get_dev_examples(self):
         return self._create_example(
-            self._read_data(data_file), "dev"
+            self._read_data(f'{DIR}/data/attribute/{self.file_prefix}_dev.csv'), "dev"
         )
 
-    def get_test_examples(self, data_file):
+    def get_test_examples(self):
         return self._create_example(
-            self._read_data(data_file), "test"
+            self._read_data(f'{DIR}/data/attribute/{self.file_prefix}_test.csv'), "test"
         )
 
     def get_labels(self):
@@ -174,7 +186,7 @@ class NerProcessor(DataProcessor):
         "[PAD]" for padding
         :return:
         """
-        return ner_label.pers_info_ner_labels
+        return self.attribute_label
 
     def _create_example(self, lines, set_type):
         examples = []
@@ -345,18 +357,24 @@ def generate_batch(data, batch_size):
 
 
 class BertNer:
-    def __init__(self, init_checkpoint=FLAGS.init_checkpoint, is_training=False):
+    def __init__(self, attribute_name, init_checkpoint=FLAGS.init_checkpoint, is_training=False):
         """
         checkpoint: Initial checkpoint (usually from a pre-trained BERT model).
         is_training: bool. true for training model, false for eval model. Controls
                      whether dropout will be applied.
         """
+        self.attribute_name = attribute_name
         self.init_checkpoint = init_checkpoint
         self.is_training = is_training
         self.learning_rate = FLAGS.learning_rate
         self.bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
         self.tokenizer = tokenization.FullTokenizer(vocab_file=FLAGS.vocab_file, do_lower_case=False)
-        self.data_processor = NerProcessor()
+        self.data_processor = NerProcessor(self.attribute_name)
+        self.attribute_name = attribute_name
+        self.attribute_info = attr_ner_label.attribute_infos[attribute_name]
+        self.attribute_dict = self.attribute_info['dict']
+        self.attribute_label = self.attribute_info['label']
+        self.file_prefix = self.attribute_info['file_prefix']
         self.labels = self.data_processor.get_labels()
         self.num_labels = len(self.labels)
         self.graph = tf.Graph()
@@ -378,6 +396,12 @@ class BertNer:
         self.sess_config.gpu_options.per_process_gpu_memory_fraction = 1
         self.sess = tf.Session(config=self.sess_config)
 
+        # if not self.is_training:
+        #     variables = tf.contrib.framework.get_variables_to_restore()
+        #     variables_to_restore = [v for v in variables if v.name.split('/')[0] == 'bert']
+        #     saver = tf.train.Saver(variables_to_restore)
+        #     saver.restore(self.sess, self.init_checkpoint)
+        # else:
         tvars = tf.trainable_variables()
         (assignment_map, initialized_variable_names) = \
             modeling.get_assignment_map_from_checkpoint(tvars, self.init_checkpoint)
@@ -410,8 +434,8 @@ class BertNer:
             loss, predict = softmax_layer(logits, self.labels_placeholder, self.num_labels, self.mask_placeholder)
             return loss, logits, predict
 
-    def train(self, data_file=FLAGS.training_data, reload=False, save_path=FLAGS.output_dir):
-        examples = self.data_processor.get_train_examples(data_file)
+    def train(self, reload=False, save_path=FLAGS.output_dir):
+        examples = self.data_processor.get_train_examples()
         input_features = get_input_features(examples, self.labels, self.tokenizer, reload, set_type='train')
         random.shuffle(input_features)
         num_train_steps = int(len(input_features) / FLAGS.train_batch_size * FLAGS.num_train_epochs)
@@ -425,7 +449,7 @@ class BertNer:
             self.sess.run(tf.initialize_all_variables())
             saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
             save_path = os.path.join(save_path, datetime.now().strftime('%Y_%m_%d_%H_%M') + '_' +
-                                     str(FLAGS.num_train_epochs) + 'epoch')
+                                     str(FLAGS.num_train_epochs) + 'epoch' + '_' + self.file_prefix)
             for epoch in range(FLAGS.num_train_epochs):
                 batch, correct_count, label_count, predict_count = 0, 0, 0, 0
                 for ids, mask, segment, labels in generate_batch(input_features, batch_size=FLAGS.train_batch_size):
@@ -464,8 +488,8 @@ class BertNer:
                         saver.save(self.sess, os.path.join(save_path, 'model.ckpt.' + str(epoch) + '.' + str(batch)))
                     batch += 1
 
-    def evaluate(self, data_file=FLAGS.test_data, reload=False):
-        examples = self.data_processor.get_test_examples(data_file)
+    def evaluate(self, reload=False):
+        examples = self.data_processor.get_test_examples()
         input_features = get_input_features(examples, self.labels, self.tokenizer, reload, set_type='eval')
         with self.graph.as_default():
             self.sess.run(tf.initialize_all_variables())
@@ -566,17 +590,17 @@ def main(_):
               "clips or animation. The options within your browser may not prevent the setting of Flash cookies. " \
               "To manage Flash cookies please click here: " \
               "http://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager07.html. <br> <br>"
-    # checkpoint = FLAGS.init_checkpoint
+    checkpoint = FLAGS.init_checkpoint
     # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.model_dir, 'conll2003'))
     # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.model_dir, 'attribute_model'))
-    checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020-07-20_00_4epoch'))
-    # clf = BertNer(is_training=True, init_checkpoint=checkpoint)
-    # clf.train(reload=False)
+    # checkpoint = tf.train.latest_checkpoint(os.path.join(FLAGS.output_dir, '2020_07_22_01_49_4epoch'))
+    clf = BertNer("Choice Type", is_training=True, init_checkpoint=checkpoint)
+    clf.train(reload=False)
     # clf = BertNer(is_training=False, init_checkpoint=checkpoint)
     # output = clf.predict(segment)
     # print(output)
-    clf = BertNer(is_training=False, init_checkpoint=checkpoint)
-    clf.evaluate()
+    # clf = BertNer("Choice Scope", is_training=False, init_checkpoint=checkpoint)
+    # clf.evaluate()
 
 
 if __name__ == "__main__":
