@@ -110,6 +110,48 @@ pers_info_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-COM", "I-COM", "B-CON", "
                         "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
 
+## Purpose
+# * Additional service/feature
+# * Advertising
+# * Analytics/Research
+# * Basic service/feature
+# * Legal requirement
+# * Marketing
+# * Merger/Acquisition
+# * Personalization/Customization
+# * Service Operation and Security
+# * Other
+# * Unspecified
+purpose_ner_dict = {
+    "Additional service/feature": ["B-ADD", "I-ADD"],
+    "Advertising": ["B-ADV", "I-ADV"],
+    "Analytics/Research": ["B_ANA", "I-ANA"],
+    "Basic service/feature": ["B-BAS", "I-BAS"],
+    "Legal requirement": ["B-LEG", "I-LEG"],
+    "Marketing": ["B-MAR", "I-MAR"],
+    "Merger/Acquisition": ["B-MER", "I-MER"],
+    "Personalization/Customization": ["B-PER", "I-PER"],
+    "Service Operation and Security": ["B-SER", "I-SER"],
+    "Other": ["B-OTH", "I-OTH"],
+    "Unspecified": ["B-UNS", "I-UNS"]
+}
+purpose_ner_labels = ["B-ADD", "I-ADD", "B-ADV", "I-ADV", "B_ANA", "I-ANA", "B-BAS", "I-BAS", "B-LEG", "I-LEG",
+                      "B-MAR", "I-MAR", "B-MER", "I-MER", "B-PER", "I-PER", "B-SER", "I-SER", "B-OTH", "I-OTH",
+                      "B-UNS", "I-UNS"]
+
+## Identifiability
+# * Aggregated or anonymized
+# * Identifiable
+# * not-selected
+# * Other
+# * Unspecified
+identifiability_ner_dict = {
+    "Aggregated or anonymized": ["B-AGG", "I-AGG"],
+    "Identifiable": ["B-IDE", "I-IDE"],
+    "Other": ["B-OTH", "I-OTH"],
+    "Unspecified": ["B-UNS", "I-UNS"]
+}
+identifiability_ner_labels = ["B-AGG", "I-AGG", "B-IDE", "I-IDE", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
 
 attribute_infos = {
@@ -132,5 +174,16 @@ attribute_infos = {
         "dict": pers_info_ner_dict,
         "label": pers_info_ner_labels,
         "file_prefix": "pers_info_type"
-    }
+    },
+    "Purpose": {
+        "dict": purpose_ner_dict,
+        "label": purpose_ner_labels,
+        "file_prefix": "purpose"
+    },
+    "Identifiability": {
+        "dict": identifiability_ner_dict,
+        "label": identifiability_ner_labels,
+        "file_prefix": "identifiability"
+    },
+
 }
