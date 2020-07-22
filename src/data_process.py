@@ -156,16 +156,16 @@ def get_unique_value():
     extract_attribute([policy_change_df], "User Choice", "user_choice")
 
     # Extract Notification Type
-    extract_attribute([policy_change_df], "Notification Type", "change_type")
+    extract_attribute([policy_change_df], "Notification Type", "notification_type")
 
     # Extract Do Not Track policy
-    extract_attribute([do_not_track_df], "Do Not Track policy", "change_type")
+    extract_attribute([do_not_track_df], "Do Not Track policy", "do_not_track")
 
     # Extract Audience Type
-    extract_attribute([audience_df], "Audience Type", "change_type")
+    extract_attribute([audience_df], "Audience Type", "audience_type")
 
     # Extract Other Type
-    extract_attribute([other_df], "Other Type", "change_type")
+    extract_attribute([other_df], "Other Type", "other_type")
 
 
 def extract_attribute(category_df_list, attribute_name, file_name):
