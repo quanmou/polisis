@@ -339,20 +339,26 @@ security_measure_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-DAL", "I-DAL", "B-G
 
 
 ## Change Type
+# * Privacy contact information
+# * Practice not covered
+# * Introductory/Generic
 # * Privacy relevant change
 # * Non-privacy relevant change
 # * In case of merger or acquisition
 # * Other
 # * Unspecified
 change_type_ner_dict = {
+    "Privacy contact information": ["B-PRI", "I-PRI"],
+    "Practice not covered": ["B-PRA", "I-PRA"],
+    "Introductory/Generic": ["B-INT", "I-INT"],
     "Privacy relevant change": ["B-PRI", "I-PRI"],
     "Non-privacy relevant change": ["B-NRC", "I-NRC"],
     "In case of merger or acquisition": ["B-INC", "I-INC"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
-change_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-PRI", "I-PRI", "B-NRC", "I-NRC", "B-INC", "I-INC", "B-OTH",
-                         "I-OTH", "B-UNS", "I-UNS"]
+change_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-PRI", "I-PRI", "B-PRA", "I-PRA", "B-INT", "I-INT", "B-PRI",
+                         "I-PRI", "B-NRC", "I-NRC", "B-INC", "I-INC", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
 
 ## User Choice

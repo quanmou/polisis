@@ -215,6 +215,9 @@ The final annotation schema consists of 10 data practice categories:
 * Unspecified
 
 ## Change Type
+* Privacy contact information
+* Practice not covered
+* Introductory/Generic
 * Privacy relevant change
 * Non-privacy relevant change
 * In case of merger or acquisition
