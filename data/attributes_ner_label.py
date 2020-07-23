@@ -203,6 +203,25 @@ action_first_party_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-CFU", "I-CFU", "B
                                 "I-TUO", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
 
+## Action Third Party
+# * Collect on first party website/app
+# * Track on first party website/app
+# * Receive/Shared with
+# * See
+# * Other
+# * Unspecified
+action_third_party_ner_dict = {
+    "Collect on first party website/app": ["B-COF", "I-COF"],
+    "Track on first party website/app": ["B-TOF", "I-TOF"],
+    "Receive/Shared with": ["B-REC", "I-REC"],
+    "See": ["B-SEE", "I-SEE"],
+    "Other": ["B-OTH", "I-OTH"],
+    "Unspecified": ["B-UNS", "I-UNS"]
+}
+action_third_party_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-COF", "I-COF", "B-TOF", "I-TOF", "B-REC", "I-REC",
+                                "B-SEE", "I-SEE", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
+
+
 ## Third Party Entity
 # * Named third party
 # * Unnamed third party
@@ -491,6 +510,11 @@ attribute_infos = {
         "dict": action_first_party_ner_dict,
         "label": action_first_party_ner_label,
         "file_prefix": "action_first_party"
+    },
+    "Action Third Party": {
+        "dict": action_third_party_ner_dict,
+        "label": action_third_party_ner_label,
+        "file_prefix": "action_third_party"
     },
     "Third Party Entity": {
         "dict": third_party_ner_dict,
