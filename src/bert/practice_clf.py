@@ -56,7 +56,7 @@ if True:
         "The output directory where the model checkpoints will be written.")
 
     flags.DEFINE_integer(
-        "max_seq_length", 512,
+        "max_seq_length", 256,
         "The maximum total input sequence length after WordPiece tokenization. "
         "Sequences longer than this will be truncated, and sequences shorter than this will be padded.")
 
@@ -301,6 +301,7 @@ class BertClassifier:
         self.labels = self.data_processor.get_labels()
         self.num_labels = len(self.labels)
         self.graph = tf.Graph()
+        self.summary_writer = tf.summary.FileWriter(f'{DIR}/logs', tf.get_default_graph())
         with self.graph.as_default():
             self._model_builder()
             self.sess.run(tf.initialize_all_variables())
@@ -383,7 +384,8 @@ class BertClassifier:
                         predict_count += len(predict_label_idx)
                     precision = round(correct_count / predict_count, 3) if predict_count != 0 else 0.0
                     recall = round(correct_count / label_count, 3) if label_count != 0 else 0.0
-                    F1 = round(2 * precision * recall / (precision + recall), 3) if (predict_count != 0 and label_count != 0) else 0.0
+                    F1 = round(2 * precision * recall / (precision + recall), 3) if (precision + recall != 0) else 0.0
+
                     if batch % 10 == 0:
                         print('Epoch: %d, batch: %d, training loss: %s, precision: %s, recall: %s, F1: %s'
                               % (epoch, batch, train_loss, precision, recall, F1))
