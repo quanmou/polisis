@@ -18,6 +18,16 @@ cho_scope_ner_dict = {
     "Third party use": ["B-TPU", "I-TPU"],
     "Unspecified": ["B-UNS", "I_UNS"]
 }
+cho_scope_label_dict = {
+    "BOTH": "Both",
+    "COL": "Collection",
+    "USE": "Use",
+    "FPC": "First party collection",
+    "FPU": "First party use",
+    "TPS": "Third party sharing/collection",
+    "TPU": "Third party use",
+    "UNS": "Unspecified"
+}
 cho_scope_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-BOTH", "I-BOTH", "B-COL", "I-COL", "B-USE", "I-USE", "B-FPC",
                         "I-FPC", "B-FPU", "I-FPU", "B-TPS", "I-TPS", "B-TPU", "I-TPU", "B-UNS", "I_UNS"]
 
@@ -44,6 +54,17 @@ cho_type_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+cho_type_label_dict = {
+    "BRO": "Browser/device privacy controls",
+    "DON": "Dont use service/feature",
+    "FIR": "First-party privacy controls",
+    "OPI": "Opt-in",
+    "OPU": "Opt-out link",
+    "OPUC": "Opt-out via contacting company",
+    "THD": "Third-party privacy controls",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 cho_type_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-BRO", "I-BRO", "B-DON", "I-DON", "B-FIR", "I-FIR", "B-OPI",
                        "I-OPI", "B-OPU", "I-OPU", "B-OPUC", "I-OPUC", "B-THD", "I-THD", "B-OTH", "I-OTH", "B-UNS",
                        "I-UNS"]
@@ -60,6 +81,12 @@ user_type_ner_dict = {
     "User without account": ["B-UWO", "I-UWO"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+user_type_label_dict = {
+    "UWA": "User with account",
+    "UWO": "User without account",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 user_type_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-UWA", "I-UWA", "B-UWO", "I-UWO", "B-OTH", "I-OTH", "B-UNS",
                         "I-UNS"]
@@ -97,9 +124,26 @@ pers_info_ner_dict = {
     "Survey data": ["B-SUR", "I-SUR"],
     "User online activities": ["B-ACT", "I-ACT"],
     "User profile": ["B-PRO", "I-PRO"],
-    "User Profile": ["B-PRO", "I-PRO"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+pers_info_label_dict = {
+    "COM": "Computer information",
+    "CON": "Contact",
+    "COO": "Cookies and tracking elements",
+    "DEM": "Demographic",
+    "FIN": "Financial",
+    "GEN": "Generic personal information",
+    "HEA": "Health",
+    "IP": "IP address and device IDs",
+    "LOC": "Location",
+    "PER": "Personal identifier",
+    "SOC": "Social media data",
+    "SUR": "Survey data",
+    "ACT": "User online activities",
+    "PRO": "User profile",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 pers_info_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-COM", "I-COM", "B-CON", "I-CON", "B-COO", "I-COO", "B-DEM",
                         "I-DEM", "B-FIN", "I-FIN", "B-GEN", "I-GEN", "B-HEA", "I-HEA", "B-IP", "I-IP", "B-LOC", "I-LOC",
@@ -122,7 +166,7 @@ pers_info_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-COM", "I-COM", "B-CON", "
 purpose_ner_dict = {
     "Additional service/feature": ["B-ADD", "I-ADD"],
     "Advertising": ["B-ADV", "I-ADV"],
-    "Analytics/Research": ["B_ANA", "I-ANA"],
+    "Analytics/Research": ["B-ANA", "I-ANA"],
     "Basic service/feature": ["B-BAS", "I-BAS"],
     "Legal requirement": ["B-LEG", "I-LEG"],
     "Marketing": ["B-MAR", "I-MAR"],
@@ -132,7 +176,20 @@ purpose_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
-purpose_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-ADD", "I-ADD", "B-ADV", "I-ADV", "B_ANA", "I-ANA", "B-BAS", "I-BAS", "B-LEG", "I-LEG",
+purpose_label_dict = {
+    "ADD": "Additional service/feature",
+    "ADV": "Advertising",
+    "ANA": "Analytics/Research",
+    "BAS": "Basic service/feature",
+    "LEG": "Legal requirement",
+    "MAR": "Marketing",
+    "MER": "Merger/Acquisition",
+    "PER": "Personalization/Customization",
+    "SER": "Service operation and security",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
+purpose_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-ADD", "I-ADD", "B-ADV", "I-ADV", "B-ANA", "I-ANA", "B-BAS", "I-BAS", "B-LEG", "I-LEG",
                       "B-MAR", "I-MAR", "B-MER", "I-MER", "B-PER", "I-PER", "B-SER", "I-SER", "B-OTH", "I-OTH",
                       "B-UNS", "I-UNS"]
 
@@ -148,6 +205,12 @@ identifiability_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+identifiability_label_dict = {
+    "AGG": "Aggregated or anonymized",
+    "IDE": "Identifiable",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 identifiability_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-AGG", "I-AGG", "B-IDE", "I-IDE", "B-OTH", "I-OTH",
                               "B-UNS", "I-UNS"]
 
@@ -158,6 +221,10 @@ identifiability_ner_labels = ["[PAD]", "O", "X", "[CLS]", "B-AGG", "I-AGG", "B-I
 does_dose_not_ner_dict = {
     "Does": ["B-DOES", "I-DOES"],
     "Does Not": ["B-DNT", "I-DNT"]
+}
+does_dose_not_label_dict = {
+    "DOES": "Does",
+    "DNT": "Does Not"
 }
 does_dose_not_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-DOES", "I-DOES", "B-DNT", "I-DNT"]
 
@@ -171,6 +238,11 @@ collection_mode_ner_dict = {
     "Implicit": ["B-IMP", "I-IMP"],
     "Explicit": ["B-EXP", "I-EXP"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+collection_mode_label_dict = {
+    "IMP": "Implicit",
+    "EXP": "Explicit",
+    "UNS": "Unspecified"
 }
 collection_mode_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-IMP", "I-IMP", "B-EXP", "I-EXP", "B-UNS", "I-UNS"]
 
@@ -198,6 +270,18 @@ action_first_party_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+action_first_party_label_dict = {
+    "CFU": "Collect from user on other websites",
+    "CMA": "Collect in mobile app",
+    "CMW": "Collect on mobile website",
+    "COW": "Collect on website",
+    "RFU": "Receive from other service/third-party (unnamed)",
+    "RFN": "Receive from other service/third-party (named)",
+    "RFP": "Receive from other parts of company/affiliates",
+    "TUO": "Track user on other websites",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 action_first_party_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-CFU", "I-CFU", "B-CMA", "I-CMA", "B-CMW", "I-CMW",
                                 "B-COW", "I-COW", "B-RFU", "I-RFU", "B-RFN", "I-RFN", "B-RFP", "I-RFP", "B-TUO",
                                 "I-TUO", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
@@ -217,6 +301,14 @@ action_third_party_ner_dict = {
     "See": ["B-SEE", "I-SEE"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+action_third_party_label_dict = {
+    "COF": "Collect on first party website/app",
+    "TOF": "Track on first party website/app",
+    "REC": "Receive/Shared with",
+    "SEE": "See",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 action_third_party_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-COF", "I-COF", "B-TOF", "I-TOF", "B-REC", "I-REC",
                                 "B-SEE", "I-SEE", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
@@ -238,6 +330,15 @@ third_party_ner_dict = {
     "Other users": ["B-OTU", "I-OTU"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+third_party_label_dict = {
+    "NTP": "Named third party",
+    "UTP": "Unnamed third party",
+    "OPC": "Other part of company/affiliate",
+    "PUB": "Public",
+    "OTU": "Other users",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 third_party_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-NTP", "I-NTP", "B-UTP", "I-UTP", "B-OPC", "I-OPC", "B-OPC",
                          "I-OPC", "B-PUB", "I-PUB", "B-OTU", "I-OTU", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
@@ -264,6 +365,17 @@ access_type_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+access_type_label_dict = {
+    "NONE": "None",
+    "VIEW": "View",
+    "EXP": "Export",
+    "EDT": "Edit information",
+    "DEA": "Deactivate account",
+    "DELF": "Delete account (full)",
+    "DELP": "Delete account (partial)",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 access_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-NONE", "I-NONE", "B-VIEW", "I-VIEW", "B-EXP", "I-EXP",
                          "B-EDT", "I-EDT", "B-DEA", "I-DEA", "B-DELF", "I-DELF", "B-DELP", "I-DELP", "B-OTH",
                          "I-OTH", "B-UNS", "I-UNS"]
@@ -284,6 +396,14 @@ access_scope_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+access_scope_label_dict = {
+    "UAD": "User account data",
+    "PRO": "Profile data",
+    "TRA": "Transactional data",
+    "OTA": "Other data about user",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 access_scope_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-UAD", "I-UAD", "B-PRO", "I-PRO", "B-TRA", "I-TRA", "B-OTA",
                           "I-OTA", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
@@ -300,6 +420,13 @@ retention_period_ner_dict = {
     "Stated Period": ["B-STA", "I-STA"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+retention_period_label_dict = {
+    "IND": "Indefinitely",
+    "LIM": "Limited",
+    "STA": "Stated Period",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 retention_period_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-IND", "I-IND", "B-LIM", "I-LIM", "B-STA", "I-STA", "B-OTH",
                               "I-OTH", "B-UNS", "I-UNS"]
@@ -323,6 +450,16 @@ retention_purpose_ner_dict = {
     "Legal requirement": ["B-LEG", "I-LEG"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+retention_purpose_label_dict = {
+    "MAR": "Marketing",
+    "ADV": "Advertising",
+    "SER": "Service operation and security",
+    "ANA": "Analytics/Research",
+    "PER": "Perform service",
+    "LEG": "Legal requirement",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 retention_purpose_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-MAR", "I-MAR", "B-ADV", "I-ADV", "B-SER", "I-SER",
                                "B-ANA", "I-ANA", "B-PER", "I-PER", "B-LEG", "I-LEG", "B-OTH", "I-OTH", "B-UNS",
@@ -352,6 +489,18 @@ security_measure_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+security_measure_label_dict = {
+    "DAL": "Data access limitation",
+    "GEN": "Generic",
+    "PRR": "Privacy review/audit",
+    "PRS": "Privacy/Security program",
+    "PRT": "Privacy training",
+    "SDS": "Secure data storage",
+    "SDT": "Secure data transfer",
+    "SUA": "Secure user authentication",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 security_measure_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-DAL", "I-DAL", "B-GEN", "I-GEN", "B-PRR", "I-PRR", "B-PRS",
                               "I-PRS", "B-PRT", "I-PRT", "B-SDS", "I-SDS", "B-SDT", "I-SDT", "B-SUA", "I-SUA", "B-OTH",
                               "I-OTH", "B-UNS", "I-UNS"]
@@ -370,11 +519,21 @@ change_type_ner_dict = {
     "Privacy contact information": ["B-PRI", "I-PRI"],
     "Practice not covered": ["B-PRA", "I-PRA"],
     "Introductory/Generic": ["B-INT", "I-INT"],
-    "Privacy relevant change": ["B-PRI", "I-PRI"],
+    "Privacy relevant change": ["B-PRC", "I-PRC"],
     "Non-privacy relevant change": ["B-NRC", "I-NRC"],
     "In case of merger or acquisition": ["B-INC", "I-INC"],
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
+}
+change_type_label_dict = {
+    "PRI": "Privacy contact information",
+    "PRA": "Practice not covered",
+    "INT": "Introductory/Generic",
+    "PRC": "Privacy relevant change",
+    "NRC": "Non-privacy relevant change",
+    "INC": "In case of merger or acquisition",
+    "OTH": "Other",
+    "UNS": "Unspecified"
 }
 change_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-PRI", "I-PRI", "B-PRA", "I-PRA", "B-INT", "I-INT", "B-PRI",
                          "I-PRI", "B-NRC", "I-NRC", "B-INC", "I-INC", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
@@ -395,6 +554,14 @@ user_choice_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+user_choice_label_dict = {
+    "USER": "User participation",
+    "OPI": "Opt-in",
+    "OPO": "Opt-out",
+    "NONE": "None",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 user_choice_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-USER", "I-USER", "B-OPI", "I-OPI", "B-OPO", "I-OPO", "B-NONE",
                          "I-NONE", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
@@ -414,6 +581,14 @@ notif_type_ner_dict = {
     "Other": ["B-OTH", "I-OTH"],
     "Unspecified": ["B-UNS", "I-UNS"]
 }
+notif_type_label_dict = {
+    "GNI": "General notice in privacy policy",
+    "GNO": "General notice on website",
+    "PER": "Personal notice",
+    "NON": "No notification",
+    "OTH": "Other",
+    "UNS": "Unspecified"
+}
 notif_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-GNI", "I-GNI", "B-GNO", "I-GNO", "B-PER", "I-PER", "B-NON",
                         "I-NON", "B-OTH", "I-OTH", "B-UNS", "I-UNS"]
 
@@ -428,6 +603,12 @@ do_not_track_ner_dict = {
     "Not honored": ["B-NHON", "I-NHON"],
     "Mentioned, but unclear if honored": ["B-MEN", "I-MEN"],
     "Other": ["B-OTH", "I-OTH"]
+}
+do_not_track_label_dict = {
+    "HON": "Honored",
+    "NHON": "Not honored",
+    "MEN": "Mentioned, but unclear if honored",
+    "OTH": "Other"
 }
 do_not_track_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-HON", "I-HON", "B-NHON", "I-NHON", "B-MEN", "I-MEN", "B-OTH",
                           "I-OTH"]
@@ -446,6 +627,13 @@ audience_type_ner_dict = {
     "Citizens from other countries": ["B-CIT", "I-CIT"],
     "Other": ["B-OTH", "I-OTH"]
 }
+audience_type_label_dict = {
+    "CAL": "Californians",
+    "CHI": "Children",
+    "EUR": "Europeans",
+    "CIT": "Citizens from other countries",
+    "OTH": "Other"
+}
 audience_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-CAL", "I-CAL", "B-CHI", "I-CHI", "B-EUR", "I-EUR", "B-CIT",
                            "I-CIT", "B-OTH", "I-OTH"]
 
@@ -461,6 +649,12 @@ other_type_ner_dict = {
     "Practice not covered": ["B-PRA", "I-PRA"],
     "Other": ["B-OTH", "I-OTH"]
 }
+other_type_label_dict = {
+    "INT": "Introductory/Generic",
+    "PRI": "Privacy contact information",
+    "PRA": "Practice not covered",
+    "OTH": "Other"
+}
 other_type_ner_label = ["[PAD]", "O", "X", "[CLS]", "B-INT", "I-INT", "B-PRI", "I-PRI", "B-PRA", "I-PRA", "B-OTH",
                         "I-OTH"]
 
@@ -469,111 +663,133 @@ attribute_infos = {
     "Choice Scope": {
         "dict": cho_scope_ner_dict,
         "label": cho_scope_ner_labels,
+        "mapping": cho_scope_label_dict,
         "file_prefix": "choice_scope"
     },
     "Choice Type": {
         "dict": cho_type_ner_dict,
         "label": cho_type_ner_labels,
+        "mapping": cho_type_label_dict,
         "file_prefix": "choice_type"
     },
     "User Type": {
         "dict": user_type_ner_dict,
         "label": user_type_ner_labels,
+        "mapping": user_type_label_dict,
         "file_prefix": "user_type"
     },
     "Personal Information Type": {
         "dict": pers_info_ner_dict,
         "label": pers_info_ner_labels,
+        "mapping": pers_info_label_dict,
         "file_prefix": "pers_info_type"
     },
     "Purpose": {
         "dict": purpose_ner_dict,
         "label": purpose_ner_labels,
+        "mapping": purpose_label_dict,
         "file_prefix": "purpose"
     },
     "Identifiability": {
         "dict": identifiability_ner_dict,
         "label": identifiability_ner_labels,
+        "mapping": identifiability_label_dict,
         "file_prefix": "identifiability"
     },
     "Does/Does Not": {
         "dict": does_dose_not_ner_dict,
         "label": does_dose_not_ner_label,
+        "mapping": does_dose_not_label_dict,
         "file_prefix": "does_does_not"
     },
     "Collection Mode": {
         "dict": collection_mode_ner_dict,
         "label": collection_mode_ner_label,
+        "mapping": collection_mode_label_dict,
         "file_prefix": "collection_mode"
     },
     "Action First-Party": {
         "dict": action_first_party_ner_dict,
         "label": action_first_party_ner_label,
+        "mapping": action_first_party_label_dict,
         "file_prefix": "action_first_party"
     },
     "Action Third Party": {
         "dict": action_third_party_ner_dict,
         "label": action_third_party_ner_label,
+        "mapping": action_third_party_label_dict,
         "file_prefix": "action_third_party"
     },
     "Third Party Entity": {
         "dict": third_party_ner_dict,
         "label": third_party_ner_label,
+        "mapping": third_party_label_dict,
         "file_prefix": "third_party_entity"
     },
     "Access Type": {
         "dict": access_type_ner_dict,
         "label": access_type_ner_label,
+        "mapping": access_type_label_dict,
         "file_prefix": "access_type"
     },
     "Access Scope": {
         "dict": access_scope_ner_dict,
         "label": access_scope_ner_label,
+        "mapping": access_scope_label_dict,
         "file_prefix": "access_scope"
     },
     "Retention Period": {
         "dict": retention_period_ner_dict,
         "label": retention_period_ner_label,
+        "mapping": retention_period_label_dict,
         "file_prefix": "retention_period"
     },
     "Retention Purpose": {
         "dict": retention_purpose_ner_dict,
         "label": retention_purpose_ner_label,
+        "mapping": retention_purpose_label_dict,
         "file_prefix": "retention_purpose"
     },
     "Security Measure": {
         "dict": security_measure_ner_dict,
         "label": security_measure_ner_label,
+        "mapping": security_measure_label_dict,
         "file_prefix": "security_measure"
     },
     "Change Type": {
         "dict": change_type_ner_dict,
         "label": change_type_ner_label,
+        "mapping": change_type_label_dict,
         "file_prefix": "change_type"
     },
     "User Choice": {
         "dict": user_choice_ner_dict,
         "label": user_choice_ner_label,
+        "mapping": user_choice_label_dict,
         "file_prefix": "user_choice"
     },
     "Notification Type": {
         "dict": notif_type_ner_dict,
         "label": notif_type_ner_label,
+        "mapping": notif_type_label_dict,
         "file_prefix": "notification_type"
     },
     "Do Not Track policy": {
         "dict": do_not_track_ner_dict,
         "label": do_not_track_ner_label,
+        "mapping": do_not_track_label_dict,
         "file_prefix": "do_not_track"
     },
     "Audience Type": {
         "dict": audience_type_ner_dict,
         "label": audience_type_ner_label,
+        "mapping": audience_type_label_dict,
         "file_prefix": "audience_type"
     },
     "Other Type": {
         "dict": other_type_ner_dict,
         "label": other_type_ner_label,
+        "mapping": other_type_label_dict,
         "file_prefix": "other_type"
     }
 }

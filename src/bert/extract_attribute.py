@@ -393,7 +393,7 @@ class BertNer:
         self.sess_config.allow_soft_placement = True
         self.sess_config.log_device_placement = False
         self.sess_config.gpu_options.allow_growth = True
-        self.sess_config.gpu_options.per_process_gpu_memory_fraction = 0.2
+        self.sess_config.gpu_options.per_process_gpu_memory_fraction = 1
         self.sess = tf.Session(config=self.sess_config)
 
         # if not self.is_training:

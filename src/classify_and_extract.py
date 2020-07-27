@@ -281,18 +281,44 @@ class ClassifyAndExtract:
                 attr = {}
                 for attribute in category_attributes[category]:
                     folder_name = attribute_infos[attribute]["file_prefix"]
+                    label_mapping = attribute_infos[attribute]['mapping']
                     checkpoint = tf.train.latest_checkpoint(f"{DIR}/model/attribute_model/{folder_name}")
                     bert_ner = BertNer(attribute, init_checkpoint=checkpoint)
                     output = bert_ner.predict(segment)
+                    output = output[1:]
+                    label_index = []
+                    start, in_flag, cur_label = 0, False, ''
+                    for i, label in enumerate(output):
+                        if label.startswith('B'):
+                            if in_flag:
+                                label_index.append([start, i - 1, label_mapping[cur_label]])
+                                start = i
+                                cur_label = label.split('-')[1]
+                            else:
+                                start = i
+                                in_flag = True
+                                cur_label = label.split('-')[1]
+                        elif label == 'O':
+                            if in_flag:
+                                label_index.append([start, i - 1, label_mapping[cur_label]])
+                                in_flag = False
+                        elif label == '[PAD]' and in_flag:
+                            label_index.append([start, i, label_mapping[cur_label]])
+                            break
+
                     labels = []
                     for i, word in enumerate(segment.split(' ')):
-                        if output[i + 1] == 'O' or output[i + 1] == '[PAD]':
+                        if output[i] == 'O' or output[i] == '[PAD]':
                             labels.append(word)
                         else:
-                            labels.append(word + '(' + output[i + 1] + ')')
+                            labels.append(word + '(' + output[i] + ')')
                     attribute_output = " ".join(labels)
-                    attr[attribute] = attribute_output
+                    attr[attribute] = {
+                        'labels': attribute_output,
+                        'index': label_index
+                    }
                 cat[category] = attr
+            if cat:
                 res.append(cat)
         return res
 
